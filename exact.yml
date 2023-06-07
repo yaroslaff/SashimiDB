@@ -1,0 +1,16 @@
+views:
+  test1:
+    file: sample/products.json
+    format: json
+    limit: 10
+  products:
+    url: https://dummyjson.com/products?limit=100
+    keypath: 
+      - products
+    format: json
+    limit: 20
+#  big:
+#    file: sample/1m.json
+
+  
+  
