@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from typing import Union
 from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
@@ -6,7 +8,13 @@ import requests
 import json
 import time
 from yaml.loader import SafeLoader
+from pprint import pprint
+
+from sqlalchemy import create_engine
+import sqlalchemy as sa
+
 import evalidate
+
 
 
 app = FastAPI()
@@ -38,6 +46,9 @@ class View():
             data = self.load_file(self.vspec['file'], format=self.vspec.get('format'))
         elif self.vspec.get('url'):
             data = self.load_url(self.vspec['url'], format=self.vspec.get('format'))
+        elif self.vspec.get('db'):            
+            data = self.load_db(self.vspec['db'], sql=self.vspec.get('sql'))
+
 
         assert data is not None
 
@@ -46,6 +57,16 @@ class View():
                 data = data[k]
         
         self._data = data
+
+
+    def load_db(self, dburl, sql):
+        assert(sql is not None)
+        engine = create_engine(dburl)
+        with engine.begin() as conn:
+            qry = sa.text(sql)
+            resultset = conn.execute(qry)
+            data = [ dict(x) for x in resultset.mappings().all() ]
+        return data
 
 
     def load_file(self, path, format=None):
@@ -81,12 +102,16 @@ class View():
                 return None
             return min(l)
 
+        exceptions = 0
+        last_exception = None
+        matches = 0
+
         op = sq.op or 'filter'
 
         limit = minnone(self.vspec.get('limit'), sq.limit)
 
         try:
-            node = evalidate.evalidate(sq.expr) 
+            node = evalidate.evalidate(sq.expr, addnodes=config.get('nodes'), attrs=config.get('attrs')) 
         except evalidate.EvalException as e:
             raise HTTPException(status_code=456, detail=f'Eval exception: {e}')
         
@@ -98,16 +123,21 @@ class View():
 
             outlist = list()
             for item in self._data:
-                if eval(code, item.copy()):
-                    matches += 1
-                    
-                    if sq.fields:
-                        item = {k: item[k] for k in sq.fields}
-                    
-                    if len(outlist) < limit:
-                        outlist.append(item)
-                    else:
-                        truncated = True
+                try:
+                    if eval(code, item.copy()):
+                        matches += 1
+                        
+                        if sq.fields:
+                            item = {k: item[k] for k in sq.fields}
+                        
+                        if limit is None or len(outlist) < limit:
+                            outlist.append(item)
+                        else:
+                            truncated = True
+                except Exception as e:
+                    exceptions += 1
+                    last_exception = str(e)
+
                     
 
             if limit is not None and len(outlist) > limit:
@@ -120,7 +150,10 @@ class View():
                 'result': outlist,
                 'limit': limit,
                 'matches': matches,
-                'trunctated': truncated
+                'trunctated': truncated,
+
+                'exceptions': exceptions,
+                'last_exception': last_exception
             }
             return result
 
@@ -134,7 +167,10 @@ def read_root():
 
 @app.post('/search/{view}')
 def search(view: str, sq: SearchQuery):
-    v = views[view]
+    try:
+        v = views[view]
+    except KeyError:
+        return HTTPException(status_code=404, detail=f"No such view {view!r}")
     start = time.time()
     r = v.op(sq)
     r['time'] = time.time() - start

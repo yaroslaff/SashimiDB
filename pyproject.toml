@@ -13,6 +13,7 @@ uvicorn = "^0.22.0"
 pyyaml = "^6.0"
 evalidate = "^1.0.3"
 requests = "^2.31.0"
+sqlalchemy = "^2.0.15"
 
 
 [build-system]

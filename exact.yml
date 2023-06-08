@@ -1,16 +1,29 @@
 views:
-  test1:
-    file: sample/products.json
-    format: json
-    limit: 10
   products:
     url: https://dummyjson.com/products?limit=100
     keypath: 
       - products
     format: json
     limit: 20
-#  big:
-#    file: sample/1m.json
+  #big:
+  #  file: sample/1m.json
+  #contacts:
+  #  db: mysql://exact:exactpass@localhost/test
+  #  sql: "SELECT * FROM contacts LIMIT 100"
+
+
+#
+# Evalidate configuration
+# Be careful when allow new node or attribute
+#
+
+nodes:
+  - List
+  - Call
+  - Attribute
+attrs:
+  - startswith
+  - endswith
 
   
   
