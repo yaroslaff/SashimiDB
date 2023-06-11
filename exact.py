@@ -3,12 +3,14 @@
 from typing import Union
 from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
+import os
 import yaml
 import requests
 import json
 import time
 from yaml.loader import SafeLoader
 from pprint import pprint
+import typing
 
 from sqlalchemy import create_engine
 import sqlalchemy as sa
@@ -34,9 +36,9 @@ class SearchQuery(BaseModel):
 
 
 class View():
-    def __init__(self, name, vspec):
+    def __init__(self, name: str, vspec: dict):
         self.name = name
-        self.vspec = vspec
+        self.vspec = vspec or dict()
         self._data = None
         
         self.load()
@@ -178,15 +180,22 @@ def search(view: str, sq: SearchQuery):
 
 def init():
     global config, views
-    print("Initialize....")
     with open(config_path) as f:
         config = yaml.load(f, Loader=SafeLoader)
-        print(config)
     
     views = dict()
-    for vname, vspec in config['views'].items():
-        print("Load", vname)
-        views[vname] = View(vname, vspec)
+    if config.get('views'):
+        for vname, vspec in config['views'].items():
+            print("Load", vname)
+            views[vname] = View(vname, vspec)
 
+    if config.get('viewdir'):
+        for vd in config['viewdir']:
+            for f in os.listdir(vd):
+                path = os.path.join(vd, os.path.basename(f))
+                vspec = {"file": path}
+                vname = os.path.splitext(f)[0]
+                print(vname, path)
+                views[vname] = View(vname, vspec)
 
 init()

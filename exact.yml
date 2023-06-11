@@ -1,4 +1,4 @@
-views:
+views2:
   products:
     url: https://dummyjson.com/products?limit=100
     keypath: 
@@ -17,6 +17,8 @@ views:
 # Be careful when allow new node or attribute
 #
 
+viewdir:
+  - sample
 nodes:
   - List
   - Call
