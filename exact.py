@@ -182,7 +182,10 @@ class View():
             if sq.aggregate:
                 result['aggregation']=dict()
                 for agg in sq.aggregate:
-                    method, field = agg.split(':')
+                    try:
+                        method, field = agg.split(':')
+                    except ValueError:
+                        raise HTTPException(status_code=400, detail=f'Can not parse aggregation statement {agg!r} must be in form AGG:FIELD e.g. min:price')
 
                     if outlist:
                         if method == 'sum':
@@ -196,7 +199,7 @@ class View():
                         elif method == 'distinct':
                             agg_result = {x[field] for x in outlist}
                         else:
-                            raise HTTPException(status_code=400, detail=f'Unknown aggregation method {method!r} must be one of sum/min/max, e.g. min:price')
+                            raise HTTPException(status_code=400, detail=f'Unknown aggregation method {method!r} must be one of sum/min/max/avg/distinct, e.g. min:price')
 
                     else:
                         # empty outlist
