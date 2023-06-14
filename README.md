@@ -57,7 +57,7 @@ pip install mysqlclient
 
 ## Build docker image
 
-  sudo docker build -f docker/Dockerfile -t yaroslaff/exact ./
+  sudo docker build -t yaroslaff/exact ./
 
 ## Sample data sources
 - https://fakestoreapi.com/products
