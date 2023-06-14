@@ -8,6 +8,5 @@ COPY exact.py /app/main.py
 COPY ./docker/exact-docker.yml /etc/exact.yml
 COPY ./docker/start.sh /
 # COPY exact.yml /app/ 
-EXPOSE 8000
 
 
