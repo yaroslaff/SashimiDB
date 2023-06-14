@@ -8,19 +8,16 @@ views:
     keypath: 
       - products
     format: json
-    # limit: 10
+    limit: 10
     # Uncomment 'multiply' field to get 100*10K=1M records for bulk test
-    multiply: 10000
-    
-
-
+    # multiply: 10000
 
 #
 # Viewdir (can be many, path to directory, where one file is view)
 #
 
-viewdir:
-  - sample
+#viewdir:
+#  - /data
 
 #
 # Evalidate configuration
@@ -35,5 +32,11 @@ attrs:
   - startswith
   - endswith
 
-  
-  
+#
+# Cross-origin origins
+#
+origins:
+  - https://example.com
+  - http://localhost
+  - http://localhost:8000
+  - https://localhost

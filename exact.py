@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-from typing import Union
 from fastapi import FastAPI, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
 from pydantic import BaseModel
 import os
 import yaml
@@ -10,7 +11,7 @@ import json
 import time
 from yaml.loader import SafeLoader
 from pprint import pprint
-import typing
+import argparse
 
 from sqlalchemy import create_engine
 import sqlalchemy as sa
@@ -21,18 +22,23 @@ import evalidate
 
 app = FastAPI()
 
-config_path = "exact.yml"
+args = None
 
+config_path = None
 config = None
 views = None
 
 class SearchQuery(BaseModel):
     expr: str
     op: str = None
+    sort: str = None
+    reverse: bool = False
     token: str = None
     limit: int = None
+    offset: int = 0
     fields: list[str] = None
-
+    aggregate: list[str] = None
+    discard: bool = False
 
 
 class View():
@@ -57,7 +63,10 @@ class View():
         if self.vspec.get('keypath'):
             for k in self.vspec.get('keypath'):
                 data = data[k]
-        
+
+        if self.vspec.get('multiply'):
+            data = data * int(self.vspec.get('multiply'))
+
         self._data = data
 
 
@@ -76,7 +85,7 @@ class View():
             # guess by extensions            
             if path.lower().endswith('.json'):
                 format = 'json'
-            elif path.lower().endswith('.yaml') or path.lower.endswith('.yml'):
+            elif path.lower().endswith('.yaml') or path.lower().endswith('.yml'):
                 format = 'yaml'
         
         # default
@@ -115,11 +124,13 @@ class View():
         try:
             node = evalidate.evalidate(sq.expr, addnodes=config.get('nodes'), attrs=config.get('attrs')) 
         except evalidate.EvalException as e:
-            raise HTTPException(status_code=456, detail=f'Eval exception: {e}')
+            raise HTTPException(status_code=400, detail=f'Eval exception: {e}')
         
         code = compile(node, f'<user: {sq.expr}>', 'eval')
 
         if op == 'filter':
+
+            # Filter
 
             truncated = False
 
@@ -128,28 +139,31 @@ class View():
                 try:
                     if eval(code, item.copy()):
                         matches += 1
-                        
                         if sq.fields:
                             item = {k: item[k] for k in sq.fields}
-                        
-                        if limit is None or len(outlist) < limit:
-                            outlist.append(item)
-                        else:
-                            truncated = True
+                        outlist.append(item)
+
                 except Exception as e:
                     exceptions += 1
                     last_exception = str(e)
 
-                    
 
+
+            # Sort
+            if sq.sort:
+                outlist = sorted(outlist, key=lambda x: x[sq.sort], reverse=sq.reverse)
+
+            # Truncate to offset/limit
+            
+            if sq.offset:
+                outlist = outlist[sq.offset:]
+            
             if limit is not None and len(outlist) > limit:
                 outlist = outlist[:limit]
                 truncated = True
 
-
             result = {
                 'status': 'OK',
-                'result': outlist,
                 'limit': limit,
                 'matches': matches,
                 'trunctated': truncated,
@@ -157,8 +171,41 @@ class View():
                 'exceptions': exceptions,
                 'last_exception': last_exception
             }
-            return result
 
+
+            # Discard
+            if not sq.discard:
+                result['result'] = outlist
+
+
+            # Aggregation functions
+            if sq.aggregate:
+                result['aggregation']=dict()
+                for agg in sq.aggregate:
+                    method, field = agg.split(':')
+
+                    if outlist:
+                        if method == 'sum':
+                            agg_result = sum(x[field] for x in outlist)
+                        elif method == 'max':
+                            agg_result = max(x[field] for x in outlist)
+                        elif method == 'min':
+                            agg_result = min(x[field] for x in outlist)
+                        elif method == 'avg':
+                            agg_result = sum(x[field] for x in outlist) / len(outlist)
+                        elif method == 'distinct':
+                            agg_result = {x[field] for x in outlist}
+                        else:
+                            raise HTTPException(status_code=400, detail=f'Unknown aggregation method {method!r} must be one of sum/min/max, e.g. min:price')
+
+                    else:
+                        # empty outlist
+                        agg_result=None
+                    
+                    
+                    result['aggregation'][agg] = agg_result
+
+            return result
 
 
 
@@ -175,11 +222,14 @@ def search(view: str, sq: SearchQuery):
         return HTTPException(status_code=404, detail=f"No such view {view!r}")
     start = time.time()
     r = v.op(sq)
-    r['time'] = time.time() - start
+    r['time'] = round(time.time() - start, 3)
     return r
 
 def init():
     global config, views
+
+    config_path = os.environ.get("EXACT_CONFIG", find_config())
+
     with open(config_path) as f:
         config = yaml.load(f, Loader=SafeLoader)
     
@@ -198,4 +248,32 @@ def init():
                 print(vname, path)
                 views[vname] = View(vname, vspec)
 
-init()
+
+    if 'origins' in config:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=config['origins'],
+            # allow_credentials=True,
+            #allow_methods=["*"],
+            allow_methods=["POST"]
+            #allow_headers=["*"],
+        )
+
+def find_config():
+    locations = [
+        '/data/etc/exact.yml',
+        '/etc/exact.yml',
+    ]
+
+    locations = [ p for p in locations if os.path.exists(p) ]
+
+    if not locations:
+        return None
+    
+    return locations[0]
+
+
+def main():
+    init()
+
+main()
