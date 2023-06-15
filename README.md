@@ -10,7 +10,12 @@ Main purpose of Exact is to have secure, fast and very flexible public back-end 
 
 ## Quick start
 
-Better to start with docker image.
+To play with Exact, you can use our demo server at [back4app](https://www.back4app.com/):
+~~~
+http POST https://exact-yaroslaff.b4a.run/search/dummy limit=3
+~~~
+
+If you want to run your own instance of exact, better to start with docker image.
 
 Download/start exact with default configuration and default dummy [products](https://dummyjson.com/) list:
 ~~~

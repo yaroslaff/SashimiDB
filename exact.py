@@ -23,6 +23,8 @@ import evalidate
 version='0.1'
 
 started = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+docker_build_time = None
+docker_build_time_path = '/app/docker-build-time.txt'
 
 app = FastAPI()
 
@@ -31,6 +33,8 @@ args = None
 config_path = None
 config = None
 views = None
+
+
 
 class SearchQuery(BaseModel):
     expr: str = 'True'
@@ -222,7 +226,8 @@ def read_root():
         "Description": "ExactAPI :: Fast and secure search inside structured data",
         "Repo URL": "https://github.com/yaroslaff/exact",
         "version": version,
-        "started": started
+        "started": started,
+        "docker_build_time": docker_build_time
         }
 
 
@@ -275,6 +280,9 @@ def init():
             allow_methods=["POST"]
             #allow_headers=["*"],
         )
+
+    if os.path.exists(docker_build_time_path):
+        with open(docker_build_time_path) as fh: docker_build_time = fh.read()
 
 def find_config():
     locations = [
