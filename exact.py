@@ -19,7 +19,7 @@ import datetime
 from sqlalchemy import create_engine
 import sqlalchemy as sa
 
-import evalidate
+from evalidate import Expr, EvalException
 
 version='0.1'
 
@@ -142,12 +142,10 @@ class View():
         limit = minnone(self.vspec.get('limit'), sq.limit)
 
         try:
-            node = evalidate.evalidate(sq.expr, addnodes=config.get('nodes'), attrs=config.get('attrs')) 
-        except evalidate.EvalException as e:
+            expr = Expr(sq.expr, nodes=config.get('nodes'), attrs=config.get('attrs')) 
+        except EvalException as e:
             raise HTTPException(status_code=400, detail=f'Eval exception: {e}')
         
-        code = compile(node, f'<user: {sq.expr}>', 'eval')
-
         if op == 'filter':
 
             # Filter
@@ -157,7 +155,7 @@ class View():
             outlist = list()
             for item in self._data:
                 try:
-                    if eval(code, item.copy()):
+                    if eval(expr.code, None, item):
                         matches += 1
                         if sq.fields:
                             item = {k: item[k] for k in sq.fields}
