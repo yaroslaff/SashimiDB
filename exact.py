@@ -25,7 +25,6 @@ version='0.1'
 started = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 docker_build_time = None
 docker_build_time_path = '/app/docker-build-time.txt'
-
 app = FastAPI()
 
 args = None
@@ -243,7 +242,7 @@ def search(view: str, sq: SearchQuery):
     return r
 
 def init():
-    global config, views
+    global config, views, docker_build_time
 
     config_path = os.environ.get("EXACT_CONFIG", find_config())
 
@@ -282,7 +281,8 @@ def init():
         )
 
     if os.path.exists(docker_build_time_path):
-        with open(docker_build_time_path) as fh: docker_build_time = fh.read()
+        with open(docker_build_time_path) as fh: 
+            docker_build_time = fh.read().strip()
 
 def find_config():
     locations = [
