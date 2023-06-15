@@ -29,7 +29,7 @@ config = None
 views = None
 
 class SearchQuery(BaseModel):
-    expr: str
+    expr: str = 'True'
     op: str = None
     sort: str = None
     reverse: bool = False
