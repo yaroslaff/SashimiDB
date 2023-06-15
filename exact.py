@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import Response
 
 from pydantic import BaseModel
 import os
@@ -10,10 +11,10 @@ import yaml
 import requests
 import json
 import time
+import typing
 from yaml.loader import SafeLoader
 from pprint import pprint
 import datetime 
-import argparse
 
 from sqlalchemy import create_engine
 import sqlalchemy as sa
@@ -32,6 +33,18 @@ args = None
 config_path = None
 config = None
 views = None
+
+class PrettyJSONResponse(Response):
+    media_type = "application/json"
+
+    def render(self, content: typing.Any) -> bytes:
+        return json.dumps(
+            content,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=4,
+            separators=(", ", ": "),
+        ).encode("utf-8")
 
 
 
@@ -219,7 +232,7 @@ class View():
 
 
 
-@app.get("/")
+@app.get("/", response_class=PrettyJSONResponse)
 def read_root():
     return {
         "Description": "ExactAPI :: Fast and secure search inside structured data",

@@ -10,7 +10,7 @@ views:
     format: json
     limit: 5
     # Uncomment 'multiply' field to get 100*10K=1M records for bulk test
-    multiply: 1000
+    # multiply: 1000
 
 #
 # Viewdir (can be many, path to directory, where one file is view)
