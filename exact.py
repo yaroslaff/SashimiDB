@@ -5,12 +5,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel
 import os
+import sys
 import yaml
 import requests
 import json
 import time
 from yaml.loader import SafeLoader
 from pprint import pprint
+import datetime 
 import argparse
 
 from sqlalchemy import create_engine
@@ -18,7 +20,9 @@ import sqlalchemy as sa
 
 import evalidate
 
+version='0.1'
 
+started = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 app = FastAPI()
 
@@ -214,7 +218,12 @@ class View():
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return {
+        "Description": "ExactAPI :: Fast and secure search inside structured data",
+        "Repo URL": "https://github.com/yaroslaff/exact",
+        "version": version,
+        "started": started
+        }
 
 
 @app.post('/search/{view}')
@@ -232,6 +241,11 @@ def init():
     global config, views
 
     config_path = os.environ.get("EXACT_CONFIG", find_config())
+
+    if config_path is None:
+        print("Config file not found", file=sys.stderr)
+        sys.exit(1)
+        return
 
     with open(config_path) as f:
         config = yaml.load(f, Loader=SafeLoader)
@@ -264,6 +278,7 @@ def init():
 
 def find_config():
     locations = [
+        'exact.yml',
         '/data/etc/exact.yml',
         '/etc/exact.yml',
     ]
