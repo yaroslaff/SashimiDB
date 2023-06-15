@@ -6,29 +6,26 @@ Main purpose of Exact is to have secure, fast and very flexible public back-end 
 
 ## Quick start
 
-To play with Exact, you can use our demo server at [back4app](https://www.back4app.com/):
+To play with Exact, you can use our demo server at [back4app](https://www.back4app.com/) (([httpie](https://github.com/httpie/httpie) is recommended)):
 ~~~
 http POST https://exact-yaroslaff.b4a.run/search/dummy limit=3
 ~~~
+
+Or if you prefer curl:
+~~~
+curl -H 'Content-Type: application/json' -X POST https://exact-yaroslaff.b4a.run/search/dummy -d '{"expr": "price<800 and brand==\"Apple\""}'
+~~~
+
+(pipe output to [jq](https://github.com/jqlang/jq) to get it formatted and colored)
+
+## Running your own instance
 
 If you want to run your own instance of exact, better to start with docker image.
 
 Download/start exact with default configuration and default dummy [products](https://dummyjson.com/) list:
 ~~~
-sudo docker run --rm --name exact -p 8000:8000 -it yaroslaff/exact
+sudo docker run --rm --name exact -p 8000:80 -it yaroslaff/exact
 ~~~
-
-Make simple query ([httpie](https://github.com/httpie/httpie) is recommended):
-~~~
-http -v POST localhost:8000/search/dummy 'expr=price<1000'
-~~~
-
-Or if you prefer curl:
-~~~
-curl -H 'Content-Type: application/json' -X POST localhost:8000/search/dummy -d '{"expr": "price<800 and brand==\"Apple\""}'
-~~~
-
-(pipe output to [jq](https://github.com/jqlang/jq) to get it formatted and colored)
 
 ##  Examples
 
