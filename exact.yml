@@ -39,6 +39,9 @@ attrs:
   - endswith
   - upper
   - lower
-
+functions:
+  - int
+  - round
+  
 # Default dataset limit
 limit: 100

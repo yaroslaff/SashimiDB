@@ -153,7 +153,7 @@ class Dataset():
         limit = minnone(self.vspec.get('limit'), sq.limit)
 
         try:
-            expr = Expr(sq.expr, nodes=config.get('nodes'), attrs=config.get('attrs')) 
+            expr = Expr(sq.expr, nodes=config.get('nodes'), attrs=config.get('attrs'), funcs=config.get('functions')) 
         except EvalException as e:
             raise HTTPException(status_code=400, detail=f'Eval exception: {e}')
         
