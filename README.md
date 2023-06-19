@@ -1,5 +1,13 @@
 # exact
-Exact is simple, secure and very fast (fracton of a second even for queries in large database) REST API for structured public data with python expressions syntax.
+Exact is simple, secure and very fast REST API for structured public data with python expressions syntax. 
+
+**Secure**: runs inside docker container, can be fully isolated from database.
+
+**Fast**: fraction of a second even for queries in large database of 1 million items.
+
+**Simple**: use one-liners below to see how easy to use it. Frontend may have controls to select min/max price, color, brand, etc, then just join it with `and` and you got `expr` to send to Exact.
+
+
 
 ## Example usage
 Main purpose of Exact is to have secure, fast and very flexible back-end for searching public data. For example, you may have online store, and your frontend needs API to quickly get *all smartphones with price from X to Y, brand Samsung or Apple, with Retina* (`category=="smartphones" and price>1 and price<1000 and brand in ["Apple", "Samsung"] and "retina" in description.lower()`) or *All green or red t-shirts, XXL size, cotton>80, sorted by price, min and max price*.
