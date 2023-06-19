@@ -1,8 +1,8 @@
 # exact
-Exact is simple in-memory read-only database for structured public data with REST API with python expressions.
+Exact is simple, secure and very fast REST API for structured public data with python expressions syntax.
 
 ## Example usage
-Main purpose of Exact is to have secure, fast and very flexible public back-end for searching public data. For example, you may have online store, and your frontend needs API to quickly get *all smartphones with price from X to Y, brand Samsung or Apple* or *All green or red t-shirts, XXL size, cotton>80, sorted by price, min and max price*
+Main purpose of Exact is to have secure, fast and very flexible public back-end for searching public data. For example, you may have online store, and your frontend needs API to quickly get *all smartphones with price from X to Y, brand Samsung or Apple, with Retina* (`category=="smartphones" and price>1 and price<1000 and brand in ["Apple", "Samsung"] and "retina" in description.lower()`) or *All green or red t-shirts, XXL size, cotton>80, sorted by price, min and max price*.
 
 ## Quick start
 
