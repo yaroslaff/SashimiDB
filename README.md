@@ -129,18 +129,18 @@ Docker container with small JSON dataset consumes 41Mb (use plain python app "al
 
 
 ## Security
-1. Exact is based on [evalidate](https://github.com/yaroslaff/evalidate) which validates expressions and executes only safe code which matches configuration limitations (e.g. does not allows calling any functions except whitelisted in exact.yml). But be careful when you whitelist new functions (technically, you can allow everything needed to run `os.system('rm -rf')`. Do not do this. Default allowed function is probably both secure and flexible enough for any possible request in real life)
-2. Recommended way is to run exact inside docker container, so even if (in theory), someone could exploit eval(), he still locked inside docker container.
+1. Exact is based on [evalidate](https://github.com/yaroslaff/evalidate) which validates expressions and executes only safe code which matches configuration limitations (e.g. does not allows calling any functions except whitelisted in exact.yml). But be careful when you whitelist new functions (technically, you can allow everything needed to run `os.system('rm -rf')`, so do not do this. Default allowed function is probably both secure and flexible enough for any possible request in real life)
+2. Recommended way is to run Exact inside docker container, so even if (in theory), someone could exploit `eval()`, he still locked inside docker container.
 3. Exact is read-only, it does not writes anything to dataset or other files.
 4. Even if you use Exact with RDBMS, Exact reads data only at initialization stage (REST API is not started), uses SQL statements from config file as-is (without any modification) and does not makes any requests to database later. So, there is no place for SQL Injections or similar kind of attacks. But if you want to fully isolate database from world, export data to JSON files with [SQL Export](https://github.com/yaroslaff/sql-export) or other tool, and use docker with this files. It will be as secure as docker.
 
 ## Performance
-For test, we use 1mil.json file, list of 1 million of products (each of 100 unique items is duplicated 10 000 times). Searching for items with `price<200` and limit=10 (820 000 matches), takes little more then 0.2 seconds. Aggregation request to find min and max price among whole 1 million dataset takes 0.43 seconds.
+For test, we use 1mil.json file, list of 1 million of products (each of 100 unique items is duplicated 10 000 times, see below). Searching for items with `price<200` and limit=10 (820 000 matches), takes little more then 0.2 seconds. Aggregation request to find min and max price among whole 1 million dataset takes 0.43 seconds.
 
 ## Tips and tricks
 - If you will always use upper/lower case in JSON datasets and in frontend, you can disable `upper`/`lower` functions and save few milliseconds on each request.
 - Remove all sensitive/not-needed fields when exporting to JSON. Leave only key fields and fields used for searching, such as price, size, color.
-- Use `limit` for every dataset.
+- Use `limit` for every dataset, and set default `limit` globally in `exact.yml`. Sending your full database in response is probably never needed, but such requests will consume RAM/CPU/Bandwidth.
 
 
 ## MySQL, MariaDB, PostgreSQL and other databases support

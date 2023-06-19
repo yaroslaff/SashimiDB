@@ -1,5 +1,5 @@
 #
-# Specific Views
+# Specific datasets
 # 
 
 datasets:
@@ -40,5 +40,5 @@ attrs:
   - upper
   - lower
 
-  
-  
+# Default dataset limit
+limit: 100
