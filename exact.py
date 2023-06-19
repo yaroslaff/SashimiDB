@@ -28,6 +28,8 @@ docker_build_time = None
 docker_build_time_path = '/app/docker-build-time.txt'
 app = FastAPI()
 
+def_limit = int(os.getenv('EXACT_LIMIT', '100'))
+
 args = None
 
 config_path = None
@@ -90,7 +92,8 @@ class Dataset():
         assert isinstance(data, list)
         print(f"Dataset {self.name}: {len(data)} items")
 
-
+        if 'limit' not in self.vspec:
+            self.vspec['limit'] = def_limit
         self._data = data
 
 
@@ -261,7 +264,7 @@ def search(dataset: str, sq: SearchQuery):
     return r
 
 def init():
-    global config, da, docker_build_time
+    global config, def_limit, docker_build_time
 
     config_path = os.environ.get("EXACT_CONFIG", find_config())
 
@@ -273,6 +276,8 @@ def init():
     with open(config_path) as f:
         config = yaml.load(f, Loader=SafeLoader)
     
+    def_limit = config.get('limit', def_limit)
+
     if config.get('datasets'):
         for ds_name, ds_spec in config['datasets'].items():
             datasets[ds_name] = Dataset(ds_name, ds_spec)
