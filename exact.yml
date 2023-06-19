@@ -2,7 +2,7 @@
 # Specific Views
 # 
 
-views:
+datasets:
   dummy:
     url: https://dummyjson.com/products?limit=100
     keypath: 
@@ -10,7 +10,10 @@ views:
     format: json
     limit: 20
     # Uncomment 'multiply' field to get 100*10K=1M records for bulk test
-    multiply: 10000
+    # multiply: 10000
+  #contact:
+  #  db: mysql://scott:tiger@127.0.0.1/contacts
+  #  sql: SELECT * FROM contact
     
 
 
@@ -19,8 +22,8 @@ views:
 # Viewdir (can be many, path to directory, where one file is view)
 #
 
-viewdir:
-  - sample
+#datadir:
+#  - sample
 
 #
 # Evalidate configuration
@@ -34,6 +37,8 @@ nodes:
 attrs:
   - startswith
   - endswith
+  - upper
+  - lower
 
   
   

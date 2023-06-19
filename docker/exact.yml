@@ -2,7 +2,7 @@
 # Specific Views
 # 
 
-views:
+datasets:
   dummy:
     url: https://dummyjson.com/products?limit=100
     keypath: 
@@ -16,7 +16,7 @@ views:
 # Viewdir (can be many, path to directory, where one file is view)
 #
 
-#viewdir:
+#datadir:
 #  - /data
 
 #
@@ -31,6 +31,8 @@ nodes:
 attrs:
   - startswith
   - endswith
+  - upper
+  - lower
 
 #
 # Cross-origin origins

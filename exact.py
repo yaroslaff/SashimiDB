@@ -32,7 +32,7 @@ args = None
 
 config_path = None
 config = None
-views = None
+datasets = dict()
 
 class PrettyJSONResponse(Response):
     media_type = "application/json"
@@ -61,7 +61,7 @@ class SearchQuery(BaseModel):
     discard: bool = False
 
 
-class View():
+class Dataset():
     def __init__(self, name: str, vspec: dict):
         self.name = name
         self.vspec = vspec or dict()
@@ -87,6 +87,10 @@ class View():
         if self.vspec.get('multiply'):
             data = data * int(self.vspec.get('multiply'))
 
+        assert isinstance(data, list)
+        print(f"Dataset {self.name}: {len(data)} items")
+
+
         self._data = data
 
 
@@ -101,6 +105,9 @@ class View():
 
 
     def load_file(self, path, format=None):
+
+        print(f".. load dataset {self.name} from {path}")
+        
         if format is None:
             # guess by extensions            
             if path.lower().endswith('.json'):
@@ -123,6 +130,7 @@ class View():
             raise ValueError(f'Unknown format: {format!r}')
 
     def load_url(self, url, format=None):
+        print(f".. load dataset {self.name} from {url}")
         return requests.get(url).json()
 
     def op(self, sq: SearchQuery):
@@ -241,19 +249,19 @@ def read_root():
         }
 
 
-@app.post('/search/{view}')
-def search(view: str, sq: SearchQuery):
+@app.post('/search/{dataset}')
+def search(dataset: str, sq: SearchQuery):
     try:
-        v = views[view]
+        v = datasets[dataset]
     except KeyError:
-        return HTTPException(status_code=404, detail=f"No such view {view!r}")
+        return HTTPException(status_code=404, detail=f"No such dataset {dataset!r}")
     start = time.time()
     r = v.op(sq)
     r['time'] = round(time.time() - start, 3)
     return r
 
 def init():
-    global config, views, docker_build_time
+    global config, da, docker_build_time
 
     config_path = os.environ.get("EXACT_CONFIG", find_config())
 
@@ -265,20 +273,17 @@ def init():
     with open(config_path) as f:
         config = yaml.load(f, Loader=SafeLoader)
     
-    views = dict()
-    if config.get('views'):
-        for vname, vspec in config['views'].items():
-            print("Load", vname)
-            views[vname] = View(vname, vspec)
+    if config.get('datasets'):
+        for ds_name, ds_spec in config['datasets'].items():
+            datasets[ds_name] = Dataset(ds_name, ds_spec)
 
-    if config.get('viewdir'):
-        for vd in config['viewdir']:
+    if config.get('datadir'):
+        for vd in config['datadir']:
             for f in os.listdir(vd):
                 path = os.path.join(vd, os.path.basename(f))
-                vspec = {"file": path}
-                vname = os.path.splitext(f)[0]
-                print(vname, path)
-                views[vname] = View(vname, vspec)
+                ds_spec = {"file": path}
+                ds_name = os.path.splitext(f)[0]
+                datasets[ds_name] = Dataset(ds_name, ds_spec)
 
 
     if 'origins' in config:
@@ -294,6 +299,11 @@ def init():
     if os.path.exists(docker_build_time_path):
         with open(docker_build_time_path) as fh: 
             docker_build_time = fh.read().strip()
+
+    # check
+    if not datasets:
+        print("Empty datasets", file=sys.stderr)
+        sys.exit(1)
 
 def find_config():
     locations = [
