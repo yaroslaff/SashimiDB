@@ -1,4 +1,4 @@
-# exact
+# Exact
 Exact is simple, secure and very fast REST API for structured public data with python expressions syntax. 
 
 **Secure**: runs inside docker container, can be fully isolated from database.
@@ -43,6 +43,8 @@ wget -O /tmp/data/data/test.json https://fakestoreapi.com/products
 
 create basic config file `/tmp/data/etc/exact.yml`:
 ~~~
+limit: 20
+
 datadir:
   - /data/data
 
@@ -55,6 +57,9 @@ attrs:
   - endswith
   - upper
   - lower
+functions:
+  - int
+  - round
 ~~~
 
 Now you can start docker container:
