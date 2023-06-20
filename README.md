@@ -1,16 +1,23 @@
 # Exact
-Exact is simple, secure and very fast REST API for structured public data with python expressions syntax. 
+Exact is simple, secure and very fast REST API for searching structured public data with python expressions syntax. 
 
-**Secure**: runs inside docker container, can be fully isolated from database.
+## Why to use Exact?
 
-**Fast**: fraction of a second even for queries in large database of 1 million items.
+### Save development time and money
+No need to develop search backend - you already have fast, secure and very flexible search API, which is good for computer store, dating site, imdb and (*almost?*) anything. 
 
-**Simple**: use one-liners below to see how easy to use it. Frontend may have controls to select min/max price, color, brand, etc, then just join it with `and` and you got `expr` to send to Exact.
+"Smartphones with price from X to Y, brand Samsung or Apple, with Retina" (`category=="smartphones" and price>1 and price<1000 and brand in ["Apple", "Samsung"] and "retina" in description.lower()`), "Movies, where Jack Nicholson played with Audrey Hepburn", "Green or red t-shirts, XXL size, cotton>80, sorted by price, min and max price".
 
+How much time you need to develop and debug such backend? Or, 2 minutes to read this README and launch docker container.
 
+And if later you will add more data to search, no need to modify backend, Exact already can search for it in no time.
 
-## Example usage
-Main purpose of Exact is to have secure, fast and very flexible back-end for searching public data. For example, you may have online store, and your frontend needs API to quickly get *all smartphones with price from X to Y, brand Samsung or Apple, with Retina* (`category=="smartphones" and price>1 and price<1000 and brand in ["Apple", "Samsung"] and "retina" in description.lower()`) or *All green or red t-shirts, XXL size, cotton>80, sorted by price, min and max price*.
+### Secure by design: Isolation from database
+With Exact it's possible to isolate search backend as reliable as you want (even put it on other server without database access if you are paranoid like me). Even if (just theory) there is an vulnerability in Exact, hacker can get access only to public data (which he could scrape from website anyway). 
+
+### Offload search queries from database
+Black friday or DDoS attack, many heavy SQL SELECT/JOIN search queries... more then server can handle. With Exact you offload heavy search job from RDBMS to Exact.  Run N more instances of Exact if needed (since it's read-only, it's very easy to scale) to handle any load. Or (in worst case) your search will stop working, but your database will work, you still can sell products and take money (database will do only easiest and most pleasant work).
+
 
 ## Quick start
 
