@@ -1,22 +1,23 @@
 # Exact
 Exact is simple, secure and very fast REST API for searching structured public data with python expressions syntax. 
 
+Or maybe it's better to call Exact as "in-memory database for public data with anonymous read access".
+
 ## Why to use Exact?
 
 ### Save development time and money
-No need to develop search backend - you already have fast, secure and very flexible search API, which is good for computer store, dating site, imdb and (*almost?*) anything. 
+Maybe your project is online computer store or IMDB-like movie database. Anyway you need fast, flexible and secure search backend for it. Not just for  simplest queries like "smartphones from lowest price to highest" + "smartphones of brand X and price between Y and Z" but for any complex search query. "Smartphones with price from X to Y, brand Samsung or Apple, with Retina screen, and what is min/max price?". If someone could not find specific product to buy, he could not buy it from you. 
 
-"Smartphones with price from X to Y, brand Samsung or Apple, with Retina" (`category=="smartphones" and price>1 and price<1000 and brand in ["Apple", "Samsung"] and "retina" in description.lower()`), "Movies, where Jack Nicholson played with Audrey Hepburn", "Green or red t-shirts, XXL size, cotton>80, sorted by price, min and max price".
+How long to develop and debug this kind of search API (and what is estimated price)? What if you can get it in a minute? Fast, secure and very flexible search API, which is good for computer store, dating site, imdb and (*almost?*) anything. 
 
-How much time you need to develop and debug such backend? Or, 2 minutes to read this README and launch docker container.
+"Smartphones with price from X to Y, brand Samsung or Apple, with Retina screen" (`category=="smartphones" and price>1 and price<1000 and brand in ["Apple", "Samsung"] and "retina" in description.lower()`), "Movies, where Jack Nicholson played with Audrey Hepburn", "Green or red t-shirts, XXL size, cotton>80, sorted by price, min and max price".
 
-And if later you will add more data to search, no need to modify backend, Exact already can search for it in no time.
+And if later you will add more data to search, no need to modify backend, Exact already can search for it in no time. You only need to write front-end JS code to send queries to Exact.
 
-### Secure by design: Isolation from database
-With Exact it's possible to isolate search backend as reliable as you want (even put it on other server without database access if you are paranoid like me). Even if (just theory) there is an vulnerability in Exact, hacker can get access only to public data (which he could scrape from website anyway). 
+### Secure by design: Isolation from main database
+All software products are developed to be secure. Many of them are developed by brilliant high-paid programmers and security specialists. And most of them had [at least one](https://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=google) vulnerability. Errare humanum est.
 
-### Offload search queries from database
-Black friday or DDoS attack, many heavy SQL SELECT/JOIN search queries... more then server can handle. With Exact you offload heavy search job from RDBMS to Exact.  Run N more instances of Exact if needed (since it's read-only, it's very easy to scale) to handle any load. Or (in worst case) your search will stop working, but your database will work, you still can sell products and take money (database will do only easiest and most pleasant work).
+With Exact it's possible to isolate search backend as reliable as you want (even put it on other server without database access if you are paranoid like me). Even if (just theory) there is an vulnerability in Exact or [Evalidate](https://github.com/yaroslaff/evalidate), hacker can get access only to public data. 
 
 
 ## Quick start
@@ -87,7 +88,7 @@ And make test query: `http POST http://localhost:8000/search/test 'expr=price<10
 Exact accepts queries as HTTP POST format, with following fields (at least one field is required, POST-body must not be empty):
 
 ### Expr
-Python-style expression to apply to view, example expressions:
+Python-style expression to filter dataset. Example expressions:
 - `price<123.45`
 - `brand=="Apple" and rating>4.5 and "laptops" in category and "macbook".upper() in description.upper()`
 
