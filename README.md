@@ -143,7 +143,7 @@ Exact will reject queries if it violates EvalModel. EvalModel is specified in ex
 `model: extended` is similar to `custom`, but starts with `base_eval_model` and you can customize it later.
 
 To extend `custom`/`extended` models, use following example:
-~~~
+~~~yaml
 model: extended
 nodes: 
   - Call
