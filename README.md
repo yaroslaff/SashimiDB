@@ -3,6 +3,8 @@ Exact is simple, secure and very fast REST API for searching structured public d
 
 Or maybe it's better to call Exact as "in-memory database for public data with anonymous read access".
 
+Or "REST API for searching records inside JSON files".
+
 ## Why to use Exact?
 
 ### Save development time and money
