@@ -30,11 +30,11 @@ datasets:
 # Be careful when allow new node or attribute
 #
 
-nodes:
-  - List
+model: extended
+nodes: 
   - Call
   - Attribute
-attrs:
+attributes:
   - startswith
   - endswith
   - upper
@@ -42,6 +42,6 @@ attrs:
 functions:
   - int
   - round
-  
+
 # Default dataset limit
 limit: 100

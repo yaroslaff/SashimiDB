@@ -57,19 +57,6 @@ limit: 20
 
 datadir:
   - /data/data
-
-nodes:
-  - List
-  - Call
-  - Attribute
-attrs:
-  - startswith
-  - endswith
-  - upper
-  - lower
-functions:
-  - int
-  - round
 ~~~
 
 Now you can start docker container:
@@ -145,6 +132,31 @@ http POST http://localhost:8000/search/dummy aggregate[]='max:price' aggregate[]
 
 ### discard
 discard `results` field (data elements). Useful if you need short reply with summary details (like "matches") or aggregation info.
+
+
+## Configure EvalModel
+Exact will reject queries if it violates EvalModel. EvalModel is specified in exact.yml as 'model', following models available
+
+`model: default` - (default, as you guess) - it's `base` model, extended with ability to access attributes and call functions. Allowed functions are: `int`, `round`. Allowed attributes are: `startswith`, `endswith`, `upper`, `lower`.
+`model: base` - evalidate `base_eval_model` as-is, without any modifications. (no attributes/function calls allowed)
+`model: custom` starts with empty EvalModel (you can use it, make request to exact and examine detail of error message to know, what to allow).
+`model: extended` is similar to `custom`, but starts with `base_eval_model` and you can customize it later.
+
+To extend `custom`/`extended` models, use following example:
+~~~
+model: extended
+nodes: 
+  - Call
+  - Attribute
+attributes:
+  - startswith
+  - endswith
+  - upper
+  - lower
+functions:
+  - int
+  - round
+~~~
 
 
 ## Memory usage

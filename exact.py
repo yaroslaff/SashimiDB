@@ -19,7 +19,7 @@ import datetime
 from sqlalchemy import create_engine
 import sqlalchemy as sa
 
-from evalidate import Expr, EvalException
+from evalidate import Expr, EvalException, base_eval_model, EvalModel
 
 version='0.1'
 
@@ -64,10 +64,11 @@ class SearchQuery(BaseModel):
 
 
 class Dataset():
-    def __init__(self, name: str, vspec: dict):
+    def __init__(self, name: str, vspec: dict, model: EvalModel):
         self.name = name
         self.vspec = vspec or dict()
         self._data = None
+        self.model = model
         
         self.load()
     
@@ -153,7 +154,7 @@ class Dataset():
         limit = minnone(self.vspec.get('limit'), sq.limit)
 
         try:
-            expr = Expr(sq.expr, nodes=config.get('nodes'), attrs=config.get('attrs'), funcs=config.get('functions')) 
+            expr = Expr(sq.expr, model=self.model) 
         except EvalException as e:
             raise HTTPException(status_code=400, detail=f'Eval exception: {e}')
         
@@ -265,6 +266,7 @@ def search(dataset: str, sq: SearchQuery):
 
 def init():
     global config, def_limit, docker_build_time
+    model = None
 
     config_path = os.environ.get("EXACT_CONFIG", find_config())
 
@@ -278,9 +280,33 @@ def init():
     
     def_limit = config.get('limit', def_limit)
 
+    model_name = config.get('model', 'default')
+    
+    if model_name == 'base':
+        model = base_eval_model
+
+    elif model_name == 'default':
+        model = base_eval_model.clone()
+
+        model.nodes.extend(['Call', 'Attribute'])
+        model.allowed_functions.extend(['int', 'round'])
+        model.attributes.extend(['startswith', 'endswith', 'upper', 'lower'])
+
+    elif model_name in ['custom', 'extended']:
+        if model_name == 'custom':
+            # start from empty
+            model = EvalModel(nodes=list())
+        else:
+            model = base_eval_model.clone()
+
+        model.nodes.extend( config.get('nodes', list()))
+        model.attributes.extend( config.get('attributes', list()))
+        model.allowed_functions.extend( config.get('functions', list()))
+
+
     if config.get('datasets'):
         for ds_name, ds_spec in config['datasets'].items():
-            datasets[ds_name] = Dataset(ds_name, ds_spec)
+            datasets[ds_name] = Dataset(ds_name, ds_spec, model=model)
 
     if config.get('datadir'):
         for vd in config['datadir']:
@@ -288,8 +314,7 @@ def init():
                 path = os.path.join(vd, os.path.basename(f))
                 ds_spec = {"file": path}
                 ds_name = os.path.splitext(f)[0]
-                datasets[ds_name] = Dataset(ds_name, ds_spec)
-
+                datasets[ds_name] = Dataset(ds_name, ds_spec, model=model)
 
     if 'origins' in config:
         app.add_middleware(
