@@ -52,7 +52,7 @@ wget -O /tmp/data/data/test.json https://fakestoreapi.com/products
 ~~~
 
 create basic config file `/tmp/data/etc/exact.yml`:
-~~~
+~~~yaml
 limit: 20
 
 datadir:
@@ -184,7 +184,7 @@ Exact uses [SQLAlchemy](https://www.sqlalchemy.org/) to work with database, so i
 https://docs.sqlalchemy.org/en/20/core/engines.html
 
 Example config
-~~~
+~~~yaml
 datasets:
   contact:
     db: mysql://scott:tiger@127.0.0.1/contacts
