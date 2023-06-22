@@ -158,6 +158,28 @@ functions:
   - round
 ~~~
 
+## Add datasets
+~~~
+datasets:
+  dummy:
+    url: https://dummyjson.com/products?limit=100
+    keypath: 
+      - products
+    format: json
+    limit: 5
+    # Uncomment 'multiply' field to get 100*10K=1M records for bulk test
+    # multiply: 1000
+  movies:
+    url: https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json
+  contact:
+    db: mysql://scott:tiger@127.0.0.1/contacts
+    sql: SELECT * FROM contact
+  test:
+    file: /tmp/something.yaml
+    format: yaml
+
+limit: 20
+~~~
 
 ## Memory usage
 Docker container with small JSON dataset consumes 41Mb (use plain python app "alternative 2", if you need even smaller memory footprint). When loading large file (1mil.json. 500+Mb), container takes 1.5Gb. Rule of thumb - container will use 3x times of JSON file size for large datasets.
@@ -202,6 +224,8 @@ sudo docker build -t yaroslaff/exact ./
 - https://fakestoreapi.com/products
 - https://www.mockaroo.com/
 - https://dummyjson.com/
+- https://github.com/prust/wikipedia-movie-data/
+
 
 Prepare 1 million items list '1mil.json':
 ~~~
