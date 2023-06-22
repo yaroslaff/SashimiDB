@@ -84,10 +84,13 @@ class Dataset():
         def recursive_lower(x):
             if isinstance(x, str):
                 return x.lower()
-            if isinstance(x,list):
+            elif isinstance(x,list):
                 return [ recursive_lower(el) for el in x ]
-            if isinstance(x, dict):
-                return { field: recursive_lower(value) for field, value in x.items() }
+            elif isinstance(x, dict):
+                for k, v in x.items():
+                    x[k] = recursive_lower(v)
+            else:
+                return x
 
         if self.vspec.get('file'):            
             data = self.load_file(self.vspec['file'], format=self.vspec.get('format'))
@@ -110,13 +113,15 @@ class Dataset():
                     el[f] = eval(expr.code, None, el)
 
         if 'postload_lower' in self.vspec:
-            for f in self.vspec['postload_lower']:
-
+            for f in self.vspec['postload_lower']:                
                 for el in data:
-                    try:
-                        el[f] = recursive_lower(el[f])
-                    except KeyError:
-                        pass
+                    if f == '.':
+                        el = recursive_lower(el)
+                    else:
+                        try:
+                            el[f] = recursive_lower(el[f])
+                        except KeyError:
+                            pass
 
         if self.vspec.get('multiply'):
             data = data * int(self.vspec.get('multiply'))
