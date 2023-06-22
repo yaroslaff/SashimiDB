@@ -169,6 +169,8 @@ datasets:
     limit: 5
     # Uncomment 'multiply' field to get 100*10K=1M records for bulk test
     # multiply: 1000
+    postload:
+      lowdesc: description.lower()
   movies:
     url: https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json
   contact:

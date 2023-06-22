@@ -9,6 +9,9 @@ datasets:
       - products
     format: json
     limit: 20
+    postload:
+      lowdesc: description.lower()
+
     # Uncomment 'multiply' field to get 100*10K=1M records for bulk test
     # multiply: 10000
   #contact:

@@ -70,6 +70,10 @@ class Dataset():
         self._data = None
         self.model = model
         
+        self.postload_model = base_eval_model.clone()
+        self.postload_model.nodes.extend(['Call', 'Attribute'])
+        self.postload_model.attributes.extend(['upper', 'lower'])
+
         self.load()
     
     def load(self):
@@ -87,8 +91,16 @@ class Dataset():
             for k in self.vspec.get('keypath'):
                 data = data[k]
 
+        if 'postload' in self.vspec:
+            for f, src in self.vspec['postload'].items():
+                expr = Expr(src, model=self.postload_model)
+                for el in data:
+                    el[f] = eval(expr.code, None, el)
+
         if self.vspec.get('multiply'):
             data = data * int(self.vspec.get('multiply'))
+
+
 
         assert isinstance(data, list)
         print(f"Dataset {self.name}: {len(data)} items")
@@ -302,7 +314,6 @@ def init():
         model.nodes.extend( config.get('nodes', list()))
         model.attributes.extend( config.get('attributes', list()))
         model.allowed_functions.extend( config.get('functions', list()))
-
 
     if config.get('datasets'):
         for ds_name, ds_spec in config['datasets'].items():
