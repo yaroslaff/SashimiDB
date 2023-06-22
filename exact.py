@@ -36,6 +36,8 @@ config_path = None
 config = None
 datasets = dict()
 
+
+
 class PrettyJSONResponse(Response):
     media_type = "application/json"
 
@@ -73,10 +75,20 @@ class Dataset():
         self.postload_model = base_eval_model.clone()
         self.postload_model.nodes.extend(['Call', 'Attribute'])
         self.postload_model.attributes.extend(['upper', 'lower'])
+        # self.postload_model.imported_functions = dict(lower=lower)
 
         self.load()
     
     def load(self):
+
+        def recursive_lower(x):
+            if isinstance(x, str):
+                return x.lower()
+            if isinstance(x,list):
+                return [ recursive_lower(el) for el in x ]
+            if isinstance(x, dict):
+                return { field: recursive_lower(value) for field, value in x.items() }
+
         if self.vspec.get('file'):            
             data = self.load_file(self.vspec['file'], format=self.vspec.get('format'))
         elif self.vspec.get('url'):
@@ -96,6 +108,15 @@ class Dataset():
                 expr = Expr(src, model=self.postload_model)
                 for el in data:
                     el[f] = eval(expr.code, None, el)
+
+        if 'postload_lower' in self.vspec:
+            for f in self.vspec['postload_lower']:
+
+                for el in data:
+                    try:
+                        el[f] = recursive_lower(el[f])
+                    except KeyError:
+                        pass
 
         if self.vspec.get('multiply'):
             data = data * int(self.vspec.get('multiply'))

@@ -170,7 +170,7 @@ datasets:
     # Uncomment 'multiply' field to get 100*10K=1M records for bulk test
     # multiply: 1000
     postload:
-      lowdesc: description.lower()
+      updesc: description.upper()
   movies:
     url: https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json
   contact:
@@ -179,6 +179,9 @@ datasets:
   test:
     file: /tmp/something.yaml
     format: yaml
+    postload_lower:
+      - extract
+      - title
 
 limit: 20
 ~~~

@@ -12,6 +12,12 @@ datasets:
     postload:
       lowdesc: description.lower()
 
+  movies:
+    url: https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json
+    postload_lower:
+      - extract
+      - title
+
     # Uncomment 'multiply' field to get 100*10K=1M records for bulk test
     # multiply: 10000
   #contact:
