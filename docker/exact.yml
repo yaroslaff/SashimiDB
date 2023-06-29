@@ -13,9 +13,9 @@ datasets:
     # multiply: 1000
     postload:
       lowdesc: description.lower()
-  movies:
-    url: https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json
-    limit: 20
+  #movies:
+  #  url: https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json
+  #  limit: 20
 
 #
 # Viewdir (can be many, path to directory, where one file is view)
