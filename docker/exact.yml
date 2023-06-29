@@ -28,7 +28,7 @@ datasets:
 # Evalidate configuration
 # Be careful when allow new node or attribute
 #
-
+model: extended
 nodes:
   - List
   - Call
@@ -43,7 +43,4 @@ attrs:
 # Cross-origin origins
 #
 origins:
-  - https://example.com
-  - http://localhost
-  - http://localhost:8000
-  - https://localhost
+  - *
