@@ -43,4 +43,4 @@ attrs:
 # Cross-origin origins
 #
 origins:
-  - *
+  - "*"

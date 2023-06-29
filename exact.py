@@ -359,7 +359,7 @@ def init():
             allow_origins=config['origins'],
             # allow_credentials=True,
             #allow_methods=["*"],
-            allow_methods=["POST"]
+            allow_methods=["POST", "OPTIONS"]
             #allow_headers=["*"],
         )
 
