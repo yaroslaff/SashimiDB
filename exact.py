@@ -36,7 +36,7 @@ config_path = None
 config = None
 datasets = dict()
 
-
+last_printed = 0
 
 class PrettyJSONResponse(Response):
     media_type = "application/json"
@@ -175,6 +175,12 @@ class Dataset():
         print(f".. load dataset {self.name} from {url}")
         return requests.get(url).json()
 
+    def __len__(self):
+        return len(self._data)
+
+    def __str__(self):
+        return f"ds {self.name} {len(self)} items"
+
     def op(self, sq: SearchQuery):
 
         def minnone(*args):
@@ -214,8 +220,6 @@ class Dataset():
                 except Exception as e:
                     exceptions += 1
                     last_exception = str(e)
-
-
 
             # Sort
             if sq.sort:
@@ -277,7 +281,41 @@ class Dataset():
                     result['aggregation'][agg] = agg_result
 
             return result
+        
+        elif op == 'delete':
+            try:
+                old_size = len(self._data)
+                self._data[:] = [ item for item in self._data if not eval(expr.code, None, item)  ]
+                new_size = len(self._data)
 
+            except Exception as e:
+                exceptions += 1
+                last_exception = str(e)
+
+
+            result = {
+                'status': 'OK',
+                'old_size': old_size,
+                'new_size': new_size,
+
+                'exceptions': exceptions,
+                'last_exception': last_exception
+            }
+            return result
+
+
+
+def print_summary():
+    global last_printed
+    if time.time() > last_printed + 60:
+        print("Summary:")
+        print(f"PID: {os.getpid()}")
+        print(f"started: {started}")
+
+        for dsname, ds in datasets.items():
+            print(ds)
+
+        last_printed = time.time()
 
 
 @app.get("/", response_class=PrettyJSONResponse)
@@ -300,7 +338,9 @@ def search(dataset: str, sq: SearchQuery):
     start = time.time()
     r = v.op(sq)
     r['time'] = round(time.time() - start, 3)
+    print_summary()
     return r
+
 
 def init():
     global config, def_limit, docker_build_time

@@ -8,7 +8,7 @@ datasets:
     keypath: 
       - products
     format: json
-    limit: 5
+    limit: 20
     # Uncomment 'multiply' field to get 100*10K=1M records for bulk test
     # multiply: 1000
     postload:
@@ -16,6 +16,10 @@ datasets:
   #movies:
   #  url: https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json
   #  limit: 20
+
+  tires:
+    file: /data/tires.json
+    limit: 25
 
 #
 # Viewdir (can be many, path to directory, where one file is view)
@@ -44,3 +48,5 @@ attrs:
 #
 origins:
   - "*"
+
+limit: 25
