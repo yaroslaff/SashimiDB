@@ -6,6 +6,7 @@ RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 RUN mkdir /data
 
 COPY ./docker/tires.json /data/tires.json
+COPY ./docker/tires2.json /data/tires2.json
 COPY exact.py /app/main.py
 COPY ./docker/exact.yml /etc/exact.yml
 COPY ./docker/start.sh /

@@ -20,6 +20,9 @@ datasets:
   tires:
     file: /data/tires.json
     limit: 25
+  tires2:
+    file: /data/tires2.json
+    limit: 100
 
 #
 # Viewdir (can be many, path to directory, where one file is view)
