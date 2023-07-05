@@ -225,14 +225,6 @@ class Dataset():
             if sq.sort:
                 outlist = sorted(outlist, key=lambda x: x[sq.sort], reverse=sq.reverse)
 
-            # Truncate to offset/limit
-            
-            if sq.offset:
-                outlist = outlist[sq.offset:]
-            
-            if limit is not None and len(outlist) > limit:
-                outlist = outlist[:limit]
-                truncated = True
 
             result = {
                 'status': 'OK',
@@ -243,12 +235,6 @@ class Dataset():
                 'exceptions': exceptions,
                 'last_exception': last_exception
             }
-
-
-            # Discard
-            if not sq.discard:
-                result['result'] = outlist
-
 
             # Aggregation functions
             if sq.aggregate:
@@ -276,9 +262,20 @@ class Dataset():
                     else:
                         # empty outlist
                         agg_result=None
-                    
-                    
+                                        
                     result['aggregation'][agg] = agg_result
+
+            # Truncate to offset/limit            
+            if sq.offset:
+                outlist = outlist[sq.offset:]
+            
+            if limit is not None and len(outlist) > limit:
+                outlist = outlist[:limit]
+                truncated = True
+
+            # Discard
+            if not sq.discard:
+                result['result'] = outlist
 
             return result
         
