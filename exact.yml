@@ -11,8 +11,6 @@ datasets:
     limit: 20
     postload:
       lowdesc: description.lower()
-    tokens:
-      - mydstoken 
 
 #  movies:
 #    url: https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json
@@ -56,9 +54,9 @@ functions:
 # Default dataset limit
 limit: 100
 
-tokens:
-  - mytoken
+#tokens:
+#  - mytoken
 
 # ip_header: CLIENT
-trusted_ips:
-  - 127.0.0.0/24
+#trusted_ips:
+#  - 127.0.0.0/24

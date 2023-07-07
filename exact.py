@@ -516,6 +516,26 @@ def init():
         with open(docker_build_time_path) as fh: 
             docker_build_time = fh.read().strip()
 
+
+    # create default config structure
+    if not 'tokens' in config:
+        config['tokens'] = list()
+
+    if not 'trusted_ips' in config:
+        config['trusted_ips'] = list()
+
+
+    # apply env variables
+    if os.environ.get('EXACT_TOKEN'):
+        # add token
+        config['tokens'].append(os.environ.get('EXACT_TOKEN'))
+
+    if os.environ.get('EXACT_TRUSTED_IP'):
+        # add token
+        config['trusted_ips'].append(os.environ.get('EXACT_TRUSTED_IP'))
+
+    print(json.dumps(config, indent=4))
+
     # check
     if not datasets:
         print("Empty datasets", file=sys.stderr)
