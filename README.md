@@ -141,9 +141,8 @@ For update/delete operations, need Bearer token authentication, must include tok
 ~~~
 Authorization: Bearer mytoken
 ~~~
-Tokens must be listed either inside 'tokens' section either from root of file or for specific dataset:
 
-**IMPORTANT WARNING**: Write operations MUST NOT be used from public web applications, because token is private and must not exists on client-side. Use DELETE/UPDATE only from your servers to update database, e.g. to set "onstock=False" when item is sold out. If you need write operations from public web app - probably Exact is not good for your project (or any user would be able to delete all records in dataset).
+**IMPORTANT WARNING**: Write operations MUST NOT be used from public web applications, because token is private and must not exists on client-side. Use DELETE/UPDATE only from your backend servers to update exact datasets, e.g. to set "onstock=False" when item is sold out. If you need write operations from public web app - probably Exact is not good for your project (or any user would be able to delete all records in dataset).
 
 ### DELETE records
 ~~~
@@ -155,6 +154,25 @@ http -A bearer -a mytoken  PATCH http://localhost:8000/ds/dummy 'expr=id==1' op=
 http -A bearer -a mytoken PATCH http://localhost:8000/ds/dummy 'expr=id==1' op=update update=onstock update_expr="False"
 ~~~
 
+
+## Configure tokens and IP whitelist
+~~~
+datasets:
+  dummy:
+    # ...
+    tokens:
+      - mydstoken 
+tokens:
+  - mytoken
+
+# ip_header: CLIENT-IP
+trusted_ips:
+  - 127.0.0.0/24
+~~~
+
+In this example, "mytoken" is global master token (works for any dataset), "mydstoken" works only for dataset "dummy".
+
+If `trusted_ips` is in config, write requests (UPDATE/DELETE) will work only from whitelisted IPs/subnets. 
 
 ## Configure EvalModel
 Exact will reject queries if it violates EvalModel. EvalModel is specified in exact.yml as 'model', following models available

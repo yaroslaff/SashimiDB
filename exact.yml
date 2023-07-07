@@ -44,7 +44,6 @@ model: extended
 nodes: 
   - Call
   - Attribute
-  - Mult
 attributes:
   - startswith
   - endswith
@@ -59,3 +58,7 @@ limit: 100
 
 tokens:
   - mytoken
+
+# ip_header: CLIENT
+trusted_ips:
+  - 127.0.0.0/24

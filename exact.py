@@ -14,6 +14,8 @@ import requests
 import json
 import time
 import typing
+import re
+import ipaddress
 from yaml.loader import SafeLoader
 from pprint import pprint
 import datetime 
@@ -362,16 +364,31 @@ def print_summary():
         last_printed = time.time()
 
 
-def validate_token(dsname, token):
+def validate_token(request: Request, dsname: str, token: str):
     # global token
-    if token in config.get('tokens', list()):
-        return True
     ds = datasets[dsname]
 
-    if token in ds.vspec.get('tokens', list()):
-        return True
+    if config.get('ip_header'):
+        ip_header_value = request.headers.get(config.get('ip_header'))
+        m = re.match('^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})', ip_header_value)
+        if m is None:
+            raise HTTPException(status_code=401, detail=f'Cannot parse ip_header {config.get("ip_header")!r} = {ip_header_value!r}')
+        client_ip = m.group(0)
 
-    raise HTTPException(status_code=401, detail=f'Token {token!r} not found, sorry')
+    else:
+        client_ip = request.client.host
+
+    tokens_whitelist = config.get('tokens', list()) + ds.vspec.get('tokens', list())
+
+    trusted_ips = config.get('trusted_ips', list()) + ds.vspec.get('trusted_ips', list())
+
+    if trusted_ips:
+        if not any(map(lambda subnet:  ipaddress.ip_address(client_ip) in ipaddress.ip_network(subnet), trusted_ips)):
+            raise HTTPException(status_code=401, detail=f'client IP {client_ip!r} not found in {trusted_ips}, sorry')
+
+
+    if token not in tokens_whitelist:
+        raise HTTPException(status_code=401, detail=f'Token {token!r} not found, sorry')
 
 
 @app.get("/", response_class=PrettyJSONResponse)
@@ -413,10 +430,10 @@ def ds_post(dataset: str, sq: SearchQuery):
     return r
 
 @app.patch('/ds/{dataset}')
-def ds_patch(dataset: str, sq: SearchQuery, authorization: HTTPBasicCredentials = Depends(auth)):
+def ds_patch(dataset: str, sq: SearchQuery, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):
 
     #check token or raise exception
-    validate_token(dataset, authorization.credentials)
+    validate_token(request, dataset, authorization.credentials)
 
     try:
         v = datasets[dataset]
