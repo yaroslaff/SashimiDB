@@ -384,7 +384,7 @@ def validate_token(request: Request, dsname: str, token: str):
 
     if trusted_ips:
         if not any(map(lambda subnet:  ipaddress.ip_address(client_ip) in ipaddress.ip_network(subnet), trusted_ips)):
-            raise HTTPException(status_code=401, detail=f'client IP {client_ip!r} not found in {trusted_ips}, sorry')
+            raise HTTPException(status_code=401, detail=f'client IP {client_ip!r} not found in trusted_ips, sorry')
 
 
     if token not in tokens_whitelist:
@@ -537,9 +537,6 @@ def init():
     if os.environ.get('EXACT_IP_HEADER'):
         # add token
         config['ip_header'] = os.environ.get('EXACT_IP_HEADER')
-
-
-    print(json.dumps(config, indent=4))
 
     # check
     if not datasets:
