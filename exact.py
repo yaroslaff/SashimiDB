@@ -259,7 +259,7 @@ class Dataset():
                     elif method == 'avg':
                         agg_result = sum(x[field] for x in outlist) / len(outlist)
                     elif method == 'distinct':
-                        agg_result = {x[field] for x in outlist}
+                        agg_result = sorted({x[field] for x in outlist})
                     else:
                         raise HTTPException(status_code=400, detail=f'Unknown aggregation method {method!r} must be one of sum/min/max/avg/distinct, e.g. min:price')
 
@@ -404,21 +404,6 @@ def read_root(request: Request):
         "headers": request.headers
         }
 
-
-"""
-@app.post('/search/{dataset}')
-def search(dataset: str, sq: SearchQuery):
-    try:
-        v = datasets[dataset]
-    except KeyError:
-        return HTTPException(status_code=404, detail=f"No such dataset {dataset!r}")
-    start = time.time()
-    r = v.search(sq)
-    r['time'] = round(time.time() - start, 3)
-    print_summary()
-    return r
-"""
-
 @app.post('/ds/{dataset}')
 def ds_post(dataset: str, sq: SearchQuery):
     try:
@@ -466,7 +451,42 @@ def init():
 
     with open(config_path) as f:
         config = yaml.load(f, Loader=SafeLoader)
-    
+
+    # create default config structure
+    if not 'tokens' in config:
+        config['tokens'] = list()
+
+    if not 'trusted_ips' in config:
+        config['trusted_ips'] = list()
+
+    if not 'datasets' in config:
+        config['datasets'] = dict()
+
+    # apply env variables
+    if os.environ.get('EXACT_DATASET'):
+        ds_name, ds_location = os.environ.get('EXACT_DATASET').split(':', maxsplit=1)
+        if ds_location.startswith('http://') or ds_location.startswith('https://'):
+            config['datasets'][ds_name] = {
+                "url": ds_location
+            }
+        else:
+            config['datasets'][ds_name] = {
+                "file": ds_location
+            }
+
+    if os.environ.get('EXACT_TOKEN'):
+        # add token
+        config['tokens'].append(os.environ.get('EXACT_TOKEN'))
+
+    if os.environ.get('EXACT_TRUSTED_IP'):
+        # add token
+        config['trusted_ips'].append(os.environ.get('EXACT_TRUSTED_IP'))
+
+    if os.environ.get('EXACT_IP_HEADER'):
+        # add token
+        config['ip_header'] = os.environ.get('EXACT_IP_HEADER')
+
+
     def_limit = config.get('limit', def_limit)
 
     model_name = config.get('model', 'default')
@@ -492,9 +512,8 @@ def init():
         model.attributes.extend( config.get('attributes', list()))
         model.allowed_functions.extend( config.get('functions', list()))
 
-    if config.get('datasets'):
-        for ds_name, ds_spec in config['datasets'].items():
-            datasets[ds_name] = Dataset(ds_name, ds_spec, model=model)
+    for ds_name, ds_spec in config['datasets'].items():
+        datasets[ds_name] = Dataset(ds_name, ds_spec, model=model)
 
     if config.get('datadir'):
         for vd in config['datadir']:
@@ -519,31 +538,12 @@ def init():
             docker_build_time = fh.read().strip()
 
 
-    # create default config structure
-    if not 'tokens' in config:
-        config['tokens'] = list()
-
-    if not 'trusted_ips' in config:
-        config['trusted_ips'] = list()
-
-
-    # apply env variables
-    if os.environ.get('EXACT_TOKEN'):
-        # add token
-        config['tokens'].append(os.environ.get('EXACT_TOKEN'))
-
-    if os.environ.get('EXACT_TRUSTED_IP'):
-        # add token
-        config['trusted_ips'].append(os.environ.get('EXACT_TRUSTED_IP'))
-
-    if os.environ.get('EXACT_IP_HEADER'):
-        # add token
-        config['ip_header'] = os.environ.get('EXACT_IP_HEADER')
-
     # check
     if not datasets:
         print("Empty datasets", file=sys.stderr)
         sys.exit(1)
+
+    # print(json.dumps(config, indent=4))
 
 def find_config():
     locations = [
