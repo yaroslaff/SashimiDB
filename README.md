@@ -26,14 +26,14 @@ With Exact it's possible to isolate search backend as reliable as you want (even
 
 To play with Exact, you can use our demo server at [back4app](https://www.back4app.com/) ([httpie](https://github.com/httpie/httpie) is recommended):
 ~~~
-http POST https://exact-yaroslaff.b4a.run/search/dummy limit=3
+http POST https://exact-yaroslaff.b4a.run/ds/dummy limit=3
 ~~~
 
 This is free virtual docker container, if no reply - it's sleeping, just repeat request in a few seconds and it will reply very quickly. Or run container locally.
 
 Or if you prefer curl:
 ~~~
-curl -H 'Content-Type: application/json' -X POST https://exact-yaroslaff.b4a.run/search/dummy -d '{"expr": "price<800 and brand==\"Apple\""}'
+curl -H 'Content-Type: application/json' -X POST https://exact-yaroslaff.b4a.run/ds/dummy -d '{"expr": "price<800 and brand==\"Apple\""}'
 ~~~
 
 (pipe output to [jq](https://github.com/jqlang/jq) to get it formatted and colored)
@@ -64,7 +64,7 @@ Now you can start docker container:
 sudo docker run --rm --name exact -p 8000:80 -it -v /tmp/data/:/data/  yaroslaff/exact
 ~~~
 
-And make test query: `http POST http://localhost:8000/search/test 'expr=price<10' limit=5`
+And make test query: `http POST http://localhost:8000/ds/test 'expr=price<10' limit=5`
 
 ## Running your own instance (Alternative 2: as python app)
 1. Clone repo: `git clone https://github.com/yaroslaff/exact.git`
@@ -82,26 +82,26 @@ Python-style expression to filter dataset. Example expressions:
 - `brand=="Apple" and rating>4.5 and "laptops" in category and "macbook".upper() in description.upper()`
 
 ~~~
-http POST http://localhost:8000/search/dummy 'expr=brand=="Apple" and rating>4.5 and "laptops" in category and "macbook".upper() in description.upper()' limit=3
+http POST http://localhost:8000/ds/dummy 'expr=brand=="Apple" and rating>4.5 and "laptops" in category and "macbook".upper() in description.upper()' limit=3
 ~~~
 
 ### sort and reverse
 sort by thisfield, e.g. "price". Optionally reversed.
 
 ~~~
-http POST http://localhost:8000/search/dummy sort=price fields[]=price reverse=1
+http POST http://localhost:8000/ds/dummy sort=price fields[]=price reverse=1
 ~~~
 
 ### limit and offset
 Can be used for pagination and to fit server-side 'limit'
 ~~~
-http POST http://localhost:8000/search/dummy 'expr=price>100' sort=price limit=2 offset=2
+http POST http://localhost:8000/ds/dummy 'expr=price>100' sort=price limit=2 offset=2
 ~~~
 
 ### fields
 Output only listed fields.
 ~~~
-http POST http://localhost:8000/search/dummy fields[]=price fields[]=description
+http POST http://localhost:8000/ds/dummy fields[]=price fields[]=description
 ~~~
 
 ### aggregate
@@ -113,7 +113,7 @@ Aggregation functions in format 'FUNCTION:field'. Functions is one of:
 - distinct
 
 ~~~
-http POST http://localhost:8000/search/dummy aggregate[]='max:price' aggregate[]='min:price' discard=1
+http POST http://localhost:8000/ds/dummy aggregate[]='max:price' aggregate[]='min:price' discard=1
 ...
 {
     "aggregation": {

@@ -405,6 +405,7 @@ def read_root(request: Request):
         }
 
 
+"""
 @app.post('/search/{dataset}')
 def search(dataset: str, sq: SearchQuery):
     try:
@@ -416,6 +417,7 @@ def search(dataset: str, sq: SearchQuery):
     r['time'] = round(time.time() - start, 3)
     print_summary()
     return r
+"""
 
 @app.post('/ds/{dataset}')
 def ds_post(dataset: str, sq: SearchQuery):
