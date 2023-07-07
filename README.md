@@ -174,7 +174,11 @@ In this example, "mytoken" is global master token (works for any dataset), "myds
 
 If `trusted_ips` is in config, write requests (UPDATE/DELETE) will work only from whitelisted IPs/subnets. 
 
+## Environment variables
+
 Env variables `EXACT_TOKEN` and `EXACT_TRUSTED_IP` (if preset) will be added to proper lists. `EXACT_IP_HEADER` will replace `ip_header` from config.
+
+`EXACT_DATASET` to add new dataset, format is  `mydataset:path/dataset.json` or `mydataset:https://example.com/dataset.json` (no other dataset options are supported when loading dataset this way)
 
 ## Configure EvalModel
 Exact will reject queries if it violates EvalModel. EvalModel is specified in exact.yml as 'model', following models available
