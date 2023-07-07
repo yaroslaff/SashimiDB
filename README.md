@@ -73,8 +73,8 @@ And make test query: `http POST http://localhost:8000/search/test 'expr=price<10
 4. `uvicorn exact:app`
 
 
-## Query format
-Exact accepts queries as HTTP POST format, with following fields (at least one field is required, POST-body must not be empty):
+## Searching. Query format
+Exact accepts search queries as HTTP POST format, with following fields (at least one field is required, POST-body must not be empty):
 
 ### Expr
 Python-style expression to filter dataset. Example expressions:
@@ -132,6 +132,17 @@ http POST http://localhost:8000/search/dummy aggregate[]='max:price' aggregate[]
 
 ### discard
 discard `results` field (data elements). Useful if you need short reply with summary details (like "matches") or aggregation info.
+
+
+## DELETE records
+~~~
+http -A bearer -a mytoken  PATCH http://localhost:8000/ds/dummy 'expr=id==1' op=delete
+~~~
+
+## UPDATE records
+~~~
+http -A bearer -a mytoken PATCH http://localhost:8000/ds/dummy 'expr=id==1' op=update update=available update_expr="False"
+~~~
 
 
 ## Configure EvalModel

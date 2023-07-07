@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import Response
+from fastapi.security.http import HTTPBearer, HTTPBasicCredentials
+
 
 from pydantic import BaseModel
 import os
@@ -26,7 +28,11 @@ version='0.1'
 started = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 docker_build_time = None
 docker_build_time_path = '/app/docker-build-time.txt'
+
+# FastAPI
 app = FastAPI()
+auth = HTTPBearer()
+
 
 def_limit = int(os.getenv('EXACT_LIMIT', '100'))
 
@@ -50,8 +56,6 @@ class PrettyJSONResponse(Response):
             separators=(", ", ": "),
         ).encode("utf-8")
 
-
-
 class SearchQuery(BaseModel):
     expr: str = 'True'
     op: str = None
@@ -63,6 +67,8 @@ class SearchQuery(BaseModel):
     fields: list[str] = None
     aggregate: list[str] = None
     discard: bool = False
+    update: str = None
+    update_expr: str=None
 
 
 class Dataset():
@@ -180,8 +186,8 @@ class Dataset():
 
     def __str__(self):
         return f"ds {self.name} {len(self)} items"
-
-    def op(self, sq: SearchQuery):
+    
+    def search(self, sq: SearchQuery):
 
         def minnone(*args):
             l = [ x for x in args if x is not None ]
@@ -201,105 +207,146 @@ class Dataset():
             expr = Expr(sq.expr, model=self.model) 
         except EvalException as e:
             raise HTTPException(status_code=400, detail=f'Eval exception: {e}')
-        
-        if op == 'filter':
 
-            # Filter
+        truncated = False
 
-            truncated = False
-
-            outlist = list()
-            for item in self._data:
-                try:
-                    if eval(expr.code, None, item):
-                        matches += 1
-                        if sq.fields:
-                            item = {k: item[k] for k in sq.fields}
-                        outlist.append(item)
-
-                except Exception as e:
-                    exceptions += 1
-                    last_exception = str(e)
-
-            # Sort
-            if sq.sort:
-                outlist = sorted(outlist, key=lambda x: x[sq.sort], reverse=sq.reverse)
-
-
-            result = {
-                'status': 'OK',
-                'limit': limit,
-                'matches': matches,
-                'trunctated': truncated,
-
-                'exceptions': exceptions,
-                'last_exception': last_exception
-            }
-
-            # Aggregation functions
-            if sq.aggregate:
-                result['aggregation']=dict()
-                for agg in sq.aggregate:
-                    try:
-                        method, field = agg.split(':')
-                    except ValueError:
-                        raise HTTPException(status_code=400, detail=f'Can not parse aggregation statement {agg!r} must be in form AGG:FIELD e.g. min:price')
-
-                    if outlist:
-                        if method == 'sum':
-                            agg_result = sum(x[field] for x in outlist)
-                        elif method == 'max':
-                            agg_result = max(x[field] for x in outlist)
-                        elif method == 'min':
-                            agg_result = min(x[field] for x in outlist)
-                        elif method == 'avg':
-                            agg_result = sum(x[field] for x in outlist) / len(outlist)
-                        elif method == 'distinct':
-                            agg_result = {x[field] for x in outlist}
-                        else:
-                            raise HTTPException(status_code=400, detail=f'Unknown aggregation method {method!r} must be one of sum/min/max/avg/distinct, e.g. min:price')
-
-                    else:
-                        # empty outlist
-                        agg_result=None
-                                        
-                    result['aggregation'][agg] = agg_result
-
-            # Truncate to offset/limit            
-            if sq.offset:
-                outlist = outlist[sq.offset:]
-            
-            if limit is not None and len(outlist) > limit:
-                outlist = outlist[:limit]
-                truncated = True
-
-            # Discard
-            if not sq.discard:
-                result['result'] = outlist
-
-            return result
-        
-        elif op == 'delete':
+        outlist = list()
+        for item in self._data:
             try:
-                old_size = len(self._data)
-                self._data[:] = [ item for item in self._data if not eval(expr.code, None, item)  ]
-                new_size = len(self._data)
+                if eval(expr.code, None, item):
+                    matches += 1
+                    if sq.fields:
+                        item = {k: item[k] for k in sq.fields}
+                    outlist.append(item)
 
             except Exception as e:
                 exceptions += 1
                 last_exception = str(e)
 
+        # Sort
+        if sq.sort:
+            outlist = sorted(outlist, key=lambda x: x[sq.sort], reverse=sq.reverse)
 
-            result = {
-                'status': 'OK',
-                'old_size': old_size,
-                'new_size': new_size,
 
-                'exceptions': exceptions,
-                'last_exception': last_exception
-            }
-            return result
+        result = {
+            'status': 'OK',
+            'limit': limit,
+            'matches': matches,
+            'trunctated': truncated,
 
+            'exceptions': exceptions,
+            'last_exception': last_exception
+        }
+
+        # Aggregation functions
+        if sq.aggregate:
+            result['aggregation']=dict()
+            for agg in sq.aggregate:
+                try:
+                    method, field = agg.split(':')
+                except ValueError:
+                    raise HTTPException(status_code=400, detail=f'Can not parse aggregation statement {agg!r} must be in form AGG:FIELD e.g. min:price')
+
+                if outlist:
+                    if method == 'sum':
+                        agg_result = sum(x[field] for x in outlist)
+                    elif method == 'max':
+                        agg_result = max(x[field] for x in outlist)
+                    elif method == 'min':
+                        agg_result = min(x[field] for x in outlist)
+                    elif method == 'avg':
+                        agg_result = sum(x[field] for x in outlist) / len(outlist)
+                    elif method == 'distinct':
+                        agg_result = {x[field] for x in outlist}
+                    else:
+                        raise HTTPException(status_code=400, detail=f'Unknown aggregation method {method!r} must be one of sum/min/max/avg/distinct, e.g. min:price')
+
+                else:
+                    # empty outlist
+                    agg_result=None
+                                    
+                result['aggregation'][agg] = agg_result
+
+        # Truncate to offset/limit            
+        if sq.offset:
+            outlist = outlist[sq.offset:]
+        
+        if limit is not None and len(outlist) > limit:
+            outlist = outlist[:limit]
+            truncated = True
+
+        # Discard
+        if not sq.discard:
+            result['result'] = outlist
+
+        return result
+        
+    def delete(self, sq: SearchQuery):
+        exceptions = 0
+        last_exception = None
+        try:
+            expr = Expr(sq.expr, model=self.model) 
+        except EvalException as e:
+            raise HTTPException(status_code=400, detail=f'Eval exception: {e}')
+
+        try:
+            old_size = len(self._data)
+            self._data[:] = [ item for item in self._data if not eval(expr.code, None, item)  ]
+            new_size = len(self._data)
+
+        except Exception as e:
+            exceptions += 1
+            last_exception = str(e)
+
+        result = {
+            'status': 'OK',
+            'old_size': old_size,
+            'new_size': new_size,
+
+            'exceptions': exceptions,
+            'last_exception': last_exception
+        }
+        return result
+
+    def update(self, sq: SearchQuery):
+        exceptions = 0
+        last_exception = None
+
+        if sq.update is None:
+            raise HTTPException(status_code=400, detail=f'need update')
+
+        if sq.update_expr is None:
+            raise HTTPException(status_code=400, detail=f'need update_expr')
+
+
+        try:
+            expr = Expr(sq.expr, model=self.model) 
+        except EvalException as e:
+            raise HTTPException(status_code=400, detail=f'Compile {sq.expr!r} exception: {e}')
+        try:
+            update_expr = Expr(sq.update_expr, model=self.model) 
+        except EvalException as e:
+            raise HTTPException(status_code=400, detail=f'Compile {sq.update_expr!r} exception: {e}')
+
+        matches = 0
+        for item in self._data:
+            try:
+                if eval(expr.code, None, item):
+                    matches += 1
+                    value = eval(update_expr.code, None, item)
+                    item[sq.update] = value
+
+            except Exception as e:
+                exceptions += 1
+                last_exception = str(e)
+
+        result = {
+            'status': 'OK',
+            'matches': matches,
+            'exceptions': exceptions,
+            'last_exception': last_exception
+        }
+        return result
 
 
 def print_summary():
@@ -315,14 +362,27 @@ def print_summary():
         last_printed = time.time()
 
 
+def validate_token(dsname, token):
+    # global token
+    if token in config.get('tokens', list()):
+        return True
+    ds = datasets[dsname]
+
+    if token in ds.vspec.get('tokens', list()):
+        return True
+
+    raise HTTPException(status_code=401, detail=f'Token {token!r} not found, sorry')
+
+
 @app.get("/", response_class=PrettyJSONResponse)
-def read_root():
+def read_root(request: Request):
     return {
         "Description": "ExactAPI :: Fast and secure search inside structured data",
         "Repo URL": "https://github.com/yaroslaff/exact",
         "version": version,
         "started": started,
-        "docker_build_time": docker_build_time
+        "docker_build_time": docker_build_time,
+        "client_host": request.client.host
         }
 
 
@@ -333,10 +393,43 @@ def search(dataset: str, sq: SearchQuery):
     except KeyError:
         return HTTPException(status_code=404, detail=f"No such dataset {dataset!r}")
     start = time.time()
-    r = v.op(sq)
+    r = v.search(sq)
     r['time'] = round(time.time() - start, 3)
     print_summary()
     return r
+
+@app.post('/ds/{dataset}')
+def ds_post(dataset: str, sq: SearchQuery):
+    try:
+        v = datasets[dataset]
+    except KeyError:
+        return HTTPException(status_code=404, detail=f"No such dataset {dataset!r}")
+    start = time.time()
+    r = v.search(sq)
+    r['time'] = round(time.time() - start, 3)
+    print_summary()
+    return r
+
+@app.patch('/ds/{dataset}')
+def ds_patch(dataset: str, sq: SearchQuery, authorization: HTTPBasicCredentials = Depends(auth)):
+
+    #check token or raise exception
+    validate_token(dataset, authorization.credentials)
+
+    try:
+        v = datasets[dataset]
+    except KeyError:
+        return HTTPException(status_code=404, detail=f"No such dataset {dataset!r}")
+    start = time.time()
+    if sq.op == "delete":
+        r = v.delete(sq)
+    if sq.op == "update":
+        r = v.update(sq)
+    r['time'] = round(time.time() - start, 3)
+    print_summary()
+    return r
+
+
 
 
 def init():

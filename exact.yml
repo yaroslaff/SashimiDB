@@ -11,11 +11,13 @@ datasets:
     limit: 20
     postload:
       lowdesc: description.lower()
+    tokens:
+      - mydstoken 
 
-  movies:
-    url: https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json
-    postload_lower:
-      - .
+#  movies:
+#    url: https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json
+#    postload_lower:
+#      - .
 
     # Uncomment 'multiply' field to get 100*10K=1M records for bulk test
     # multiply: 10000
@@ -42,6 +44,7 @@ model: extended
 nodes: 
   - Call
   - Attribute
+  - Mult
 attributes:
   - startswith
   - endswith
@@ -53,3 +56,6 @@ functions:
 
 # Default dataset limit
 limit: 100
+
+tokens:
+  - mytoken
