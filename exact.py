@@ -534,6 +534,11 @@ def init():
         # add token
         config['trusted_ips'].append(os.environ.get('EXACT_TRUSTED_IP'))
 
+    if os.environ.get('EXACT_IP_HEADER'):
+        # add token
+        config['ip_header'] = os.environ.get('EXACT_IP_HEADER')
+
+
     print(json.dumps(config, indent=4))
 
     # check

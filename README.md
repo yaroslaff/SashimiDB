@@ -174,7 +174,7 @@ In this example, "mytoken" is global master token (works for any dataset), "myds
 
 If `trusted_ips` is in config, write requests (UPDATE/DELETE) will work only from whitelisted IPs/subnets. 
 
-Env variables `EXACT_TOKEN` and `EXACT_TRUSTED_IP` (if preset) will be added to proper lists.
+Env variables `EXACT_TOKEN` and `EXACT_TRUSTED_IP` (if preset) will be added to proper lists. `EXACT_IP_HEADER` will replace `ip_header` from config.
 
 ## Configure EvalModel
 Exact will reject queries if it violates EvalModel. EvalModel is specified in exact.yml as 'model', following models available
