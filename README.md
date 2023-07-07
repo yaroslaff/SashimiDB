@@ -134,14 +134,25 @@ http POST http://localhost:8000/search/dummy aggregate[]='max:price' aggregate[]
 discard `results` field (data elements). Useful if you need short reply with summary details (like "matches") or aggregation info.
 
 
-## DELETE records
+
+
+## Write operations (update/delete)
+For update/delete operations, need Bearer token authentication, must include token in header:
+~~~
+Authorization: Bearer mytoken
+~~~
+Tokens must be listed either inside 'tokens' section either from root of file or for specific dataset:
+
+**IMPORTANT WARNING**: Write operations MUST NOT be used from public web applications, because token is private and must not exists on client-side. Use DELETE/UPDATE only from your servers to update database, e.g. to set "onstock=False" when item is sold out. If you need write operations from public web app - probably Exact is not good for your project (or any user would be able to delete all records in dataset).
+
+### DELETE records
 ~~~
 http -A bearer -a mytoken  PATCH http://localhost:8000/ds/dummy 'expr=id==1' op=delete
 ~~~
 
 ## UPDATE records
 ~~~
-http -A bearer -a mytoken PATCH http://localhost:8000/ds/dummy 'expr=id==1' op=update update=available update_expr="False"
+http -A bearer -a mytoken PATCH http://localhost:8000/ds/dummy 'expr=id==1' op=update update=onstock update_expr="False"
 ~~~
 
 
