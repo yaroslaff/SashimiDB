@@ -85,6 +85,12 @@ class Dataset():
         self.postload_model.attributes.extend(['upper', 'lower'])
         # self.postload_model.imported_functions = dict(lower=lower)
 
+        self.named_search = dict()
+        vspec_searches = self.vspec.get('search')
+        if vspec_searches is not None:
+            for search_name, search_desc in vspec_searches.items():
+                sq = SearchQuery(**search_desc)
+                self.named_search[search_name] = dict(desc = search_desc, sq = sq, r = None)
         self.load()
     
     def load(self):
@@ -308,6 +314,7 @@ class Dataset():
             'exceptions': exceptions,
             'last_exception': last_exception
         }
+        self.drop_cache()
         return result
 
     def update(self, sq: SearchQuery):
@@ -348,7 +355,14 @@ class Dataset():
             'exceptions': exceptions,
             'last_exception': last_exception
         }
+        self.drop_cache()
         return result
+    
+    def drop_cache(self):
+        # Drop all names searches cache
+        for ns_name, ns in self.named_search.items():
+            ns['r'] = None
+
 
 
 def print_summary():
@@ -415,6 +429,29 @@ def ds_post(dataset: str, sq: SearchQuery):
     r['time'] = round(time.time() - start, 3)
     print_summary()
     return r
+
+@app.get('/ds/{dataset}/{search_name}')
+def ds_named_search(dataset: str, search_name: str):
+    try:
+        ds = datasets[dataset]
+    except KeyError:
+        return HTTPException(status_code=404, detail=f"No such dataset {dataset!r}")
+    
+    try:
+        ns = ds.named_search[search_name]
+    except KeyError:
+        return HTTPException(status_code=404, detail=f"No such named search {search_name!r} in ds {dataset!r}")
+    
+    start = time.time()
+
+    if ns['r'] is None:
+        ns['r'] = ds.search(ns['sq'])
+    
+    r = ns['r']
+    r['time'] = round(time.time() - start, 3)
+    print_summary()
+    return r
+
 
 @app.patch('/ds/{dataset}')
 def ds_patch(dataset: str, sq: SearchQuery, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):

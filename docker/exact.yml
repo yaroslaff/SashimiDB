@@ -20,6 +20,19 @@ datasets:
   tires:
     file: /data/tires.json
     limit: 100
+    search:
+      index:
+        expr: True
+        reverse: 0
+        sort: price
+        limit: 20
+        aggregate:
+          - min:price
+          - max:price
+          - distinct:brand
+          - distinct:width
+          - distinct:aspectRatio
+          - distinct:rimDiameter
 
 #
 # Viewdir (can be many, path to directory, where one file is view)
