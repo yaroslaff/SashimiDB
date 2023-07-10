@@ -18,7 +18,8 @@ datasets:
   #  limit: 20
 
   tires:
-    file: /data/tires.json
+    # file: /data/tires.json
+    url: https://tmp.sysattack.com/exact/flat.json
     limit: 100
     search:
       index:

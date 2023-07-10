@@ -93,6 +93,10 @@ class Dataset():
                 self.named_search[search_name] = dict(desc = search_desc, sq = sq, r = None)
         self.load()
     
+    def reload(self):
+        self.drop_cache()
+        self.load()
+
     def load(self):
 
         def recursive_lower(x):
@@ -421,11 +425,17 @@ def read_root(request: Request):
 @app.post('/ds/{dataset}')
 def ds_post(dataset: str, sq: SearchQuery):
     try:
-        v = datasets[dataset]
+        ds = datasets[dataset]
     except KeyError:
         return HTTPException(status_code=404, detail=f"No such dataset {dataset!r}")
     start = time.time()
-    r = v.search(sq)
+
+    if sq.op == "reload":
+        print("Reload dataset")
+        r = ds.reload()
+    else:        
+        r = ds.search(sq)
+
     r['time'] = round(time.time() - start, 3)
     print_summary()
     return r
