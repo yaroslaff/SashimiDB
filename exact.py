@@ -25,27 +25,6 @@ import sqlalchemy as sa
 
 from evalidate import Expr, EvalException, base_eval_model, EvalModel
 
-version='0.1'
-
-started = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-docker_build_time = None
-docker_build_time_path = '/app/docker-build-time.txt'
-
-# FastAPI
-app = FastAPI()
-auth = HTTPBearer()
-
-
-def_limit = int(os.getenv('EXACT_LIMIT', '100'))
-
-args = None
-
-config_path = None
-config = None
-datasets = dict()
-
-last_printed = 0
-
 class PrettyJSONResponse(Response):
     media_type = "application/json"
 
@@ -93,9 +72,10 @@ class Dataset():
                 self.named_search[search_name] = dict(desc = search_desc, sq = sq, r = None)
         self.load()
     
-    def reload(self):
+    def reload(self):        
         self.drop_cache()
         self.load()
+        return dict(status=f"reloaded ds {self.name!r}")
 
     def load(self):
 
@@ -166,7 +146,7 @@ class Dataset():
 
     def load_file(self, path, format=None):
 
-        print(f".. load dataset {self.name} from {path}")
+        print(f".. load dataset {self.name!r} from {path!r}")
         
         if format is None:
             # guess by extensions            
@@ -190,7 +170,7 @@ class Dataset():
             raise ValueError(f'Unknown format: {format!r}')
 
     def load_url(self, url, format=None):
-        print(f".. load dataset {self.name} from {url}")
+        print(f".. load dataset {self.name!r} from {url!r}")
         return requests.get(url).json()
 
     def __len__(self):
@@ -368,6 +348,30 @@ class Dataset():
             ns['r'] = None
 
 
+### Global variables ###
+
+version='0.1'
+
+started = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+docker_build_time = None
+docker_build_time_path = '/app/docker-build-time.txt'
+
+# FastAPI
+app = FastAPI()
+auth = HTTPBearer()
+
+
+def_limit = int(os.getenv('EXACT_LIMIT', '100'))
+
+args = None
+
+config_path = None
+config = None
+datasets : dict[str, Dataset] = dict()
+
+last_printed = 0
+
+
 
 def print_summary():
     global last_printed
@@ -430,11 +434,7 @@ def ds_post(dataset: str, sq: SearchQuery):
         return HTTPException(status_code=404, detail=f"No such dataset {dataset!r}")
     start = time.time()
 
-    if sq.op == "reload":
-        print("Reload dataset")
-        r = ds.reload()
-    else:        
-        r = ds.search(sq)
+    r = ds.search(sq)
 
     r['time'] = round(time.time() - start, 3)
     print_summary()
@@ -470,14 +470,16 @@ def ds_patch(dataset: str, sq: SearchQuery, request: Request, authorization: HTT
     validate_token(request, dataset, authorization.credentials)
 
     try:
-        v = datasets[dataset]
+        ds = datasets[dataset]
     except KeyError:
         return HTTPException(status_code=404, detail=f"No such dataset {dataset!r}")
     start = time.time()
     if sq.op == "delete":
-        r = v.delete(sq)
+        r = ds.delete(sq)
     if sq.op == "update":
-        r = v.update(sq)
+        r = ds.update(sq)
+    if sq.op == "reload":
+        r = ds.reload()
     r['time'] = round(time.time() - start, 3)
     print_summary()
     return r
