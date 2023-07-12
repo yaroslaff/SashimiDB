@@ -480,10 +480,15 @@ def ds_patch(dataset: str, sq: SearchQuery, request: Request, authorization: HTT
     start = time.time()
     if sq.op == "delete":
         r = ds.delete(sq)
-    if sq.op == "update":
+    elif sq.op == "update":
         r = ds.update(sq)
-    if sq.op == "reload":
+    elif sq.op == "reload":
         r = ds.reload()
+    else:
+        return HTTPException(status_code=400, detail=f"Unknown PATCH operation {sq.op!r}")
+
+
+
     r['time'] = round(time.time() - start, 3)
     print_summary()
     return r
