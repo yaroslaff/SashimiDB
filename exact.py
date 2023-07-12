@@ -395,14 +395,18 @@ def validate_token(request: Request, dsname: str, token: str):
     ds = datasets[dsname]
 
     if config.get('ip_header'):
-        ip_header_value = request.headers.get(config.get('ip_header'))
-        m = re.match('^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})', ip_header_value)
-        if m is None:
-            raise HTTPException(status_code=401, detail=f'Cannot parse ip_header {config.get("ip_header")!r} = {ip_header_value!r}')
-        client_ip = m.group(0)
-
+        client_ip_here = request.headers.get(config.get('ip_header'))
     else:
-        client_ip = request.client.host
+        client_ip_here = request.client.host
+
+    m = re.match('^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})', client_ip_here)
+    if m is None:
+        raise HTTPException(status_code=401, detail=f'Cannot parse ip from {client_ip_here!r} (ip_header: {config.get("ip_header")!r}')
+    client_ip = m.group(0)
+    print("client ip:", client_ip)
+
+
+
 
     tokens_whitelist = config.get('tokens', list()) + ds.vspec.get('tokens', list())
 
