@@ -1,3 +1,4 @@
 requests
 sqlalchemy
-evalidate>=2.0.0
+evalidate>=2.0.2
+python-dotenv

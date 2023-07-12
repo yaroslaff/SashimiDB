@@ -20,6 +20,8 @@ from yaml.loader import SafeLoader
 from pprint import pprint
 import datetime 
 
+from dotenv import load_dotenv
+
 from sqlalchemy import create_engine
 import sqlalchemy as sa
 
@@ -350,6 +352,8 @@ class Dataset():
 
 ### Global variables ###
 
+load_dotenv()
+
 version='0.1'
 
 started = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -497,6 +501,8 @@ def init():
         print("Config file not found", file=sys.stderr)
         sys.exit(1)
         return
+    
+    print(f"Load config {config_path}")
 
     with open(config_path) as f:
         config = yaml.load(f, Loader=SafeLoader)
@@ -513,15 +519,16 @@ def init():
 
     # apply env variables
     if os.environ.get('EXACT_DATASET'):
-        ds_name, ds_location = os.environ.get('EXACT_DATASET').split(':', maxsplit=1)
-        if ds_location.startswith('http://') or ds_location.startswith('https://'):
-            config['datasets'][ds_name] = {
-                "url": ds_location
-            }
-        else:
-            config['datasets'][ds_name] = {
-                "file": ds_location
-            }
+        for dsline in os.environ.get('EXACT_DATASET').split(' '):
+            ds_name, ds_location = dsline.split(':', maxsplit=1)
+            if ds_location.startswith('http://') or ds_location.startswith('https://'):
+                config['datasets'][ds_name] = {
+                    "url": ds_location
+                }
+            else:
+                config['datasets'][ds_name] = {
+                    "file": ds_location
+                }
 
     if os.environ.get('EXACT_TOKEN'):
         # add token
