@@ -421,7 +421,6 @@ def validate_token(request: Request, dsname: str, token: str):
 
 @app.get("/", response_class=PrettyJSONResponse)
 def read_root(request: Request):
-    print(request.headers)
     return {
         "Description": "ExactAPI :: Fast and secure search inside structured data",
         "Repo URL": "https://github.com/yaroslaff/exact",
@@ -429,7 +428,7 @@ def read_root(request: Request):
         "started": started,
         "docker_build_time": docker_build_time,
         "client_host": request.client.host,
-        "headers": request.headers
+        # "headers": request.headers
         }
 
 @app.post('/ds/{dataset}')
