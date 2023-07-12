@@ -202,8 +202,6 @@ class Dataset():
         except EvalException as e:
             raise HTTPException(status_code=400, detail=f'Eval exception: {e}')
 
-        truncated = False
-
         outlist = list()
         for item in self._data:
             try:
@@ -226,7 +224,7 @@ class Dataset():
             'status': 'OK',
             'limit': limit,
             'matches': matches,
-            'trunctated': truncated,
+            'trunctated': False,
 
             'exceptions': exceptions,
             'last_exception': last_exception
@@ -267,7 +265,7 @@ class Dataset():
         
         if limit is not None and len(outlist) > limit:
             outlist = outlist[:limit]
-            truncated = True
+            result['truncated'] = True
 
         # Discard
         if not sq.discard:
