@@ -542,7 +542,7 @@ def init():
 
     if os.environ.get('EXACT_TRUSTED_IP'):
         # add token
-        config['trusted_ips'].expand(os.environ.get('EXACT_TRUSTED_IP').split(' '))
+        config['trusted_ips'].extend(os.environ.get('EXACT_TRUSTED_IP').split(' '))
 
     if os.environ.get('EXACT_IP_HEADER'):
         # add token
