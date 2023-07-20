@@ -94,7 +94,8 @@ class Dataset():
             
 
 
-    def reload(self):        
+    def reload(self):
+        self.check_allowed_operation("reload")
         self.drop_cache()
         self.load()
         return dict(status=f"reloaded ds {self.name!r}")
@@ -334,6 +335,9 @@ class Dataset():
         return result
 
     def update(self, sq: SearchQuery):
+
+        self.check_allowed_operation("update")
+
         exceptions = 0
         last_exception = None
 
