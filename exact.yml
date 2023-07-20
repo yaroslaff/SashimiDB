@@ -82,6 +82,7 @@ model: extended
 nodes: 
   - Call
   - Attribute
+  - List
 attributes:
   - startswith
   - endswith

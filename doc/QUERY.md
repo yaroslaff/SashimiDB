@@ -1,5 +1,9 @@
 # Query format
 
+Examples below supposes exact server is running and listening port 8000 (like explained in "Running your own instance (Alternative 1 (recommended): docker container" in README.md)
+
+Also, here we use `http` command (from [httpie](https://httpie.io)) for local testing, but in production, most likely, you will use JavaScript [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch).
+
 ## Search/Fetch
 Exact accepts search queries as HTTP POST format, with following fields (at least one field is required, POST-body must not be empty):
 
@@ -65,3 +69,29 @@ discard `results` field (data elements). Useful if you need short reply with sum
 
 
 ### Named queries
+
+
+## Write operations (update/delete)
+For update/delete operations, need Bearer token authentication, must include token in header:
+~~~
+Authorization: Bearer mytoken
+~~~
+
+**IMPORTANT WARNING**: Write operations MUST NOT be used from public web applications, because token is private and must not exists on client-side. Use DELETE/UPDATE only from your backend servers to update exact datasets, e.g. to set "onstock=False" when item is sold out. If you need write operations from public web app - probably Exact is not good for your project (or any user would be able to delete all records in dataset).
+
+See [Security](doc/SECURITY.md) for more.
+
+### DELETE records
+~~~
+http -A bearer -a mytoken  PATCH http://localhost:8000/ds/dummy 'expr=id==1' op=delete
+~~~
+
+## UPDATE records
+~~~
+http -A bearer -a mytoken PATCH http://localhost:8000/ds/dummy 'expr=id==1' op=update update=onstock update_expr="False"
+~~~
+
+## RELOAD dataset
+~~~
+http -A bearer -a mytoken PATCH http://localhost:8000/ds/dummy op=reload
+~~~

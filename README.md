@@ -8,7 +8,7 @@ Or "REST API for searching records inside JSON files".
 ## Why to use Exact?
 
 ### Save development time and money
-Maybe your project is online computer store or IMDB-like movie database. Anyway you need fast, flexible and secure search backend for it. Not just for  simplest queries like "smartphones from lowest price to highest" + "smartphones of brand X and price between Y and Z" but for any complex search query. "Smartphones with price from X to Y, brand Samsung or Apple, with Retina screen, and what is min/max price?". If someone could not find specific product to buy, he could not buy it from you. 
+Maybe your project is online computer store or IMDB-like movie database. Anyway you need fast, flexible and secure search backend for it. Not just for simplest queries like "smartphones from lowest price to highest" + "smartphones of brand X and price between Y and Z" but for any complex search query. "Smartphones with price from X to Y, brand Samsung or Apple, with Retina screen, and what is min/max price?". If someone could not find specific product to buy, he could not buy it from you. 
 
 How long to develop and debug this kind of search API (and what is estimated price)? What if you can get it in a minute? Fast, secure and very flexible search API, which is good for computer store, dating site, imdb and (*almost?*) anything. 
 
@@ -38,6 +38,8 @@ curl -H 'Content-Type: application/json' -X POST https://exact-yaroslaff.b4a.run
 
 (pipe output to [jq](https://github.com/jqlang/jq) to get it formatted and colored)
 
+See - [QUERY.md](doc/QUERY.md) for example queries.
+
 ## Running your own instance (Alternative 1 (recommended): docker container)
 
 If you want to run your own instance of exact, better to start with docker image.
@@ -54,10 +56,20 @@ wget -O /tmp/data/data/test.json https://fakestoreapi.com/products
 create basic config file `/tmp/data/etc/exact.yml`:
 ~~~yaml
 limit: 20
-
 datadir:
   - /data/data
+
+datasets:
+  dummy:
+    url: https://dummyjson.com/products?limit=100
+    keypath:
+      - products
+    format: json
+    limit: 20
 ~~~
+
+This will create exact instance with two datasets, "dummy" (loaded from network) and "test" loaded from local file test.json from datadir.
+
 
 Now you can start docker container:
 ~~~
@@ -72,98 +84,15 @@ And make test query: `http POST http://localhost:8000/ds/test 'expr=price<10' li
 3. activate virtualenv: `poetry shell`
 4. `uvicorn exact:app`
 
-
-
-
-
-## Configure tokens and IP whitelist
-~~~
-datasets:
-  dummy:
-    # ...
-    tokens:
-      - mydstoken 
-tokens:
-  - mytoken
-
-# ip_header: CLIENT-IP
-trusted_ips:
-  - 127.0.0.0/24
-~~~
-
-In this example, "mytoken" is global master token (works for any dataset), "mydstoken" works only for dataset "dummy".
-
-If `trusted_ips` is in config, write requests (UPDATE/DELETE) will work only from whitelisted IPs/subnets. 
-
-## Environment variables
-
-Env variables `EXACT_TOKEN` and `EXACT_TRUSTED_IP` (if preset) will be added to proper lists. `EXACT_IP_HEADER` will replace `ip_header` from config.
-
-`EXACT_DATASET` to add new dataset from environment, format is  `mydataset:path/dataset.json mydataset2:https://example.com/dataset.json` or `mydataset:https://example.com/dataset.json` (no other dataset options are supported when loading dataset this way, default settings are used)
-
-Environment variables automatically loaded from `.env` file.
-
-## Configure EvalModel
-Exact will reject queries if it violates EvalModel. EvalModel is specified in exact.yml as 'model', following models available
-
-`model: default` - (default, as you guess) - it's `base` model, extended with ability to access attributes and call functions. Allowed functions are: `int`, `round`. Allowed attributes are: `startswith`, `endswith`, `upper`, `lower`.
-`model: base` - evalidate `base_eval_model` as-is, without any modifications. (no attributes/function calls allowed)
-`model: custom` starts with empty EvalModel (you can use it, make request to exact and examine detail of error message to know, what to allow).
-`model: extended` is similar to `custom`, but starts with `base_eval_model` and you can customize it later.
-
-To extend `custom`/`extended` models, use following example:
-~~~yaml
-model: extended
-nodes: 
-  - Call
-  - Attribute
-attributes:
-  - startswith
-  - endswith
-  - upper
-  - lower
-functions:
-  - int
-  - round
-~~~
-
-## Add datasets
-~~~
-datasets:
-  dummy:
-    url: https://dummyjson.com/products?limit=100
-    keypath: 
-      - products
-    format: json
-    limit: 5
-    # Uncomment 'multiply' field to get 100*10K=1M records for bulk test
-    # multiply: 1000
-    postload:
-      updesc: description.upper()
-  movies:
-    url: https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json
-  contact:
-    db: mysql://scott:tiger@127.0.0.1/contacts
-    sql: SELECT * FROM contact
-  test:
-    file: /tmp/something.yaml
-    format: yaml
-    postload_lower:
-      - extract
-      - title
-
-limit: 20
-~~~
+## Documentation
+Please see files in `doc/`:
+- [QUERY.md](doc/QUERY.md)
+- [CONFIG.md](doc/CONFIG.md)
+- [SECURITY.md](doc/SECURITY.md)
+- [TROUBLESHOOTING.md](doc/TROUBLESHOOTING.md)
 
 ## Memory usage
 Docker container with small JSON dataset consumes 41Mb (use plain python app "alternative 2", if you need even smaller memory footprint). When loading large file (1mil.json. 500+Mb), container takes 1.5Gb. Rule of thumb - container will use 3x times of JSON file size for large datasets.
-
-
-## Security
-1. Exact is based on [evalidate](https://github.com/yaroslaff/evalidate) which validates expressions and executes only safe code which matches configuration limitations (e.g. does not allows calling any functions except whitelisted in exact.yml). But be careful when you whitelist new functions (technically, you can allow everything needed to run `os.system('rm -rf')`, so do not do this. Default allowed function is probably both secure and flexible enough for any possible request in real life)
-2. Recommended way is to run Exact inside docker container, so even if (in theory), someone could exploit `eval()`, he still locked inside docker container.
-3. Exact is read-only, it does not writes anything to dataset or other files.
-4. Even if you use Exact with RDBMS, Exact reads data only at initialization stage (REST API is not started), uses SQL statements from config file as-is (without any modification) and does not makes any requests to database later. So, there is no place for SQL Injections or similar kind of attacks. But if you want to fully isolate database from world, export data to JSON files with [SQL Export](https://github.com/yaroslaff/sql-export) or other tool, and use docker with this files. It will be as secure as docker.
 
 ## Performance
 For test, we use 1mil.json file, list of 1 million of products (each of 100 unique items is duplicated 10 000 times, see below). Searching for items with `price<200` and limit=10 (820 000 matches), takes little more then 0.2 seconds. Aggregation request to find min and max price among whole 1 million dataset takes 0.43 seconds.
