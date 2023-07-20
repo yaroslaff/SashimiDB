@@ -27,6 +27,9 @@ datasets:
       first20:
         expr: True
         limit: 20
+    allowed_operations:
+      - update
+      - delete
 
 
   tires:

@@ -144,6 +144,8 @@ Authorization: Bearer mytoken
 
 **IMPORTANT WARNING**: Write operations MUST NOT be used from public web applications, because token is private and must not exists on client-side. Use DELETE/UPDATE only from your backend servers to update exact datasets, e.g. to set "onstock=False" when item is sold out. If you need write operations from public web app - probably Exact is not good for your project (or any user would be able to delete all records in dataset).
 
+See [Security](doc/SECURITY.md) for more.
+
 ### DELETE records
 ~~~
 http -A bearer -a mytoken  PATCH http://localhost:8000/ds/dummy 'expr=id==1' op=delete

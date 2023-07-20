@@ -61,6 +61,8 @@ class Dataset():
         self._data = None
         self.model = model
         
+
+
         self.postload_model = base_eval_model.clone()
         self.postload_model.nodes.extend(['Call', 'Attribute'])
         self.postload_model.attributes.extend(['upper', 'lower'])
@@ -72,8 +74,26 @@ class Dataset():
             for search_name, search_desc in vspec_searches.items():
                 sq = SearchQuery(**search_desc)
                 self.named_search[search_name] = dict(desc = search_desc, sq = sq, r = None)
+
+        self.allowed_operations = self.vspec.get('allowed_operations', list())
+
+        self.set_defaults()
+
         self.load()
     
+
+    def set_defaults(self):
+        """
+            set defaults variables for dataset
+        """
+
+        def_allowed_operations = ['update', 'reload', 'delete']
+
+        if not self.allowed_operations:
+            self.allowed_operations = list(def_allowed_operations)
+            
+
+
     def reload(self):        
         self.drop_cache()
         self.load()
@@ -181,6 +201,15 @@ class Dataset():
     def __str__(self):
         return f"ds {self.name} {len(self)} items"
     
+
+    def check_allowed_operation(self, opname):
+        
+        if opname in self.allowed_operations:
+            return
+
+        raise HTTPException(status_code=401, detail=f'Operation {opname!r} not allowed for ds {self.name!r}')
+
+
     def search(self, sq: SearchQuery):
 
         def minnone(*args):
@@ -272,8 +301,11 @@ class Dataset():
             result['result'] = outlist
 
         return result
-        
+            
     def delete(self, sq: SearchQuery):
+
+        self.check_allowed_operation("delete")
+
         exceptions = 0
         last_exception = None
         try:
@@ -479,7 +511,7 @@ def ds_patch(dataset: str, sq: SearchQuery, request: Request, authorization: HTT
     except KeyError:
         return HTTPException(status_code=404, detail=f"No such dataset {dataset!r}")
     start = time.time()
-    if sq.op == "delete":
+    if sq.op == "delete":        
         r = ds.delete(sq)
     elif sq.op == "update":
         r = ds.update(sq)
