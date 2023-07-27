@@ -52,8 +52,7 @@ class SearchQuery(BaseModel):
     discard: bool = False
     update: str = None
     update_expr: str=None
-    filterfields: typing.Dict[str, typing.Union[int, float, str, typing.List] ] = None
-    test: typing.Union[int, float, str] = None
+    filter: typing.Dict[str, typing.Union[int, float, str, typing.List] ] = None
 
 
 class Dataset():
@@ -505,8 +504,8 @@ def read_root(request: Request):
 @app.post('/ds/{dataset}')
 async def ds_post(dataset: str, request: Request, sq: SearchQuery):
 
-    if sq.filterfields:
-        sq.expr = make_expr(sq.expr, sq.filterfields)
+    if sq.filter:
+        sq.expr = make_expr(sq.expr, sq.filter)
 
     if not sq.expr:
         sq.expr = 'True'

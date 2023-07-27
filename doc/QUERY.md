@@ -7,7 +7,7 @@ Also, here we use `http` command (from [httpie](https://httpie.io)) for local te
 ## Search/Fetch
 Exact accepts search queries as HTTP POST format, with following fields (at least one field is required, POST-body must not be empty):
 
-### Expr
+### expr
 Python-style expression to filter dataset. Example expressions:
 - `price<123.45`
 - `brand=="Apple" and rating>4.5 and "laptops" in category and "macbook".upper() in description.upper()`
@@ -17,6 +17,24 @@ To fetch one specific record (e.g. by id field) just use this as expr to get lis
 ~~~
 http POST http://localhost:8000/ds/dummy 'expr=brand=="Apple" and rating>4.5 and "laptops" in category and "macbook".upper() in description.upper()' limit=3
 ~~~
+
+### filter
+This is alternative to `expr` (actually, it's used to construct `expr`). Dictionary of fields and values.
+
+Example:
+~~~
+http POST http://localhost:8000/ds/dummy filter[category]=skincare filter[price__lt]=50
+~~~
+This will find products with `price` less then 50 and `category` `"skincare"`.
+
+if value is list `in` operation is supposed. This filter `filter[category][]=skincare filter[category][]=fragrances` will search in these two categories.
+
+Suffixes (after two underscores) are for math comparisions. Available suffixes: lt (`<`), le (`<=`), gt (`>`), ge (`>=`).
+
+All comparisions are joined with "and" logic.
+
+If Expr is given it's joined as well: `filter[category]=skincare filter[price__lt]=50` is equal to `'expr=category=="skincare"' filter[price__lt]=50`, both will make expr `category == "skincare" and price < 50`.
+
 
 ### sort and reverse
 sort by thisfield, e.g. "price". Optionally reversed.
