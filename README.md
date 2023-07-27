@@ -1,25 +1,40 @@
 # Exact
-Exact is in-memory database with REST API for JAMstack websites.
+Exact is in-memory database with REST API for reactive JavaScript/JAMstack websites.
 
 ## Features
 
-Exact allows anonymous read-only HTTP queries (with Cross-origin control only) from JavaScript. 
+Exact allows anonymous read-only queries (with Cross-origin control only) from web page JavaScript. 
+
+Query format is simple and very flexible (as flexible as Python expression).
+
+Write operations (such as UPDATE or DELETE records or reload dataset) could be allowed optionally from whitelisted IPs with HTTP Bearer authentication.
 
 Exact is simple, [secure](doc/SECURITY.md) and very fast (less then half a second for heavy search query in dataset of 1 million records).
 
-## Limitation
-Exact cannot work with private data. 
+Almost any dataset structure is supported, the only requirement - dataset must have tabular nature (list of dicts) like database tables and spreadsheets.
+
+## Limitations
+Exact cannot work with private data. For instance, for online store, you may use Exact to serve dataset of products and feedbacks, but you will need your own backend to serve profile page. Everything you put to dataset is public and almost as easy to download as if you'd put dataset.json on website.
+
+Exact is not very good (not very fast) if you have frequent changes in dataset (you have to make one HTTP request for each update, this is probably slower then simple SQL query to local database server. But you may update many records at once e.g. set 'id in [1, 22, 333]'). But even in this situation you still can use Exact (example: search engine for online store which should not recommend out of stock products):
+- You may update records after each purchase (e.g. sent UPDATE to set `onstock` field to `123` or to `onstock-1`)
+- You may update records only after important changes (e.g. when item is out of stock. Most likely this will happen quite rare)
+- You may delete records 
+- You may use Exact for searching but adjust some details on page (how many products available on stock in realtime) with your backend.
+
 
 ## Why to use Exact?
 
 ### Save development time and money
-Maybe your project is online computer store or IMDB-like movie database. Anyway you need fast, flexible and secure search backend for it. Not just for simplest queries like "smartphones from lowest price to highest" + "smartphones of brand X and price between Y and Z" but for any complex search query. "Smartphones with price from X to Y, brand Samsung or Apple, with Retina screen, and what is min/max price?". If someone could not find specific product to buy, he could not buy it from you. 
+Maybe your project is online electronic store or IMDB-like movie database. Anyway you need fast, flexible and secure search backend for it. Not just for simplest queries like "smartphones from lowest price to highest" + "smartphones of brand X and price between Y and Z" but for any complex search query. "Smartphones with price from X to Y, brand Samsung or Apple, with Retina screen, and what is min/max price?". If someone could not find specific product to buy, he could not buy it from you. 
 
 How long to develop and debug this kind of search API (and what is estimated price)? What if you can get it in a minute? Fast, secure and very flexible search API, which is good for computer store, dating site, imdb and (*almost?*) anything. 
 
 "Smartphones with price from X to Y, brand Samsung or Apple, with Retina screen" (`category=="smartphones" and price>1 and price<1000 and brand in ["Apple", "Samsung"] and "retina" in description.lower()`), "Movies, where Jack Nicholson played with Audrey Hepburn", "Green or red t-shirts, XXL size, cotton>80, sorted by price, min and max price".
 
 And if later you will add more data to search, no need to modify backend, Exact already can search for it in no time. You only need to write front-end JS code to send queries to Exact.
+
+But Exact not only for "search". If you need to display info about imdb movie with id 123567, you can just make query to get dataset element with `id==1234567` and render page. Thus, you can have one HTML/JS web page to display data about any record in dataset.
 
 ### Get high lighthouse score and better position in SERP
 
