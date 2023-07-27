@@ -1,9 +1,14 @@
 # Exact
-Exact is simple, secure and very fast REST API for searching structured public data with python expressions syntax. 
+Exact is in-memory database with REST API for JAMstack websites.
 
-Or maybe it's better to call Exact as "in-memory database for public data with anonymous read access".
+## Features
 
-Or "REST API for searching records inside JSON files".
+Exact allows anonymous read-only HTTP queries (with Cross-origin control only) from JavaScript. 
+
+Exact is simple, [secure](doc/SECURITY.md) and very fast (less then half a second for heavy search query in dataset of 1 million records).
+
+## Limitation
+Exact cannot work with private data. 
 
 ## Why to use Exact?
 
@@ -16,10 +21,19 @@ How long to develop and debug this kind of search API (and what is estimated pri
 
 And if later you will add more data to search, no need to modify backend, Exact already can search for it in no time. You only need to write front-end JS code to send queries to Exact.
 
+### Get high lighthouse score and better position in SERP
+
+With Exact you can use reactive search and other database operations from JavaScript, thus avoid Server-Side rendering and serve pre-renedered HTML pages to get very fast performance rating (google and users loves fast sites!).
+
+Our demo site [shinhub.ru](https://shinhub.ru/) got [100/100/100/100 lighthouse rating for desktop](https://pagespeed.web.dev/analysis/https-shinhub-ru/g39tdd1xg1?form_factor=desktop) and 99/100/100/100 mobile lighthouse rating. (And it's possible to alter web page design a little to get 100 performance rating, but I like current approach)
+
+
 ### Secure by design: Isolation from main database
 All software products are developed to be secure. Many of them are developed by brilliant high-paid programmers and security specialists. And most of them had [at least one](https://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=google) vulnerability. Errare humanum est.
 
 With Exact it's possible to isolate search backend as reliable as you want (even put it on other server without database access if you are paranoid like me). Even if (just theory) there is an vulnerability in Exact or [Evalidate](https://github.com/yaroslaff/evalidate), hacker can get access only to public data. 
+
+See [doc/SECURITY.md](doc/SECURITY.md) for more.
 
 
 ## Quick start

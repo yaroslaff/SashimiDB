@@ -2,7 +2,7 @@
 
 Examples below supposes exact server is running and listening port 8000 (like explained in "Running your own instance (Alternative 1 (recommended): docker container" in README.md)
 
-Also, here we use `http` command (from [httpie](https://httpie.io)) for local testing, but in production, most likely, you will use JavaScript [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch).
+Also, here we use `http` command (from [httpie](https://httpie.io)) for local testing, but in front-end development, most likely, you will use JavaScript [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch).
 
 ## Search/Fetch
 Exact accepts search queries as HTTP POST format, with following fields (at least one field is required, POST-body must not be empty):

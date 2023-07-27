@@ -6,7 +6,7 @@ from starlette.responses import Response
 from fastapi.security.http import HTTPBearer, HTTPBasicCredentials
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictInt, StrictFloat, StrictStr
 import os
 import sys
 import yaml
@@ -40,7 +40,7 @@ class PrettyJSONResponse(Response):
         ).encode("utf-8")
 
 class SearchQuery(BaseModel):
-    expr: str = 'True'
+    expr: str = None
     op: str = None
     sort: str = None
     reverse: bool = False
@@ -52,6 +52,8 @@ class SearchQuery(BaseModel):
     discard: bool = False
     update: str = None
     update_expr: str=None
+    filterfields: typing.Dict[str, typing.Union[int, float, str, typing.List] ] = None
+    test: typing.Union[int, float, str] = None
 
 
 class Dataset():
@@ -411,6 +413,39 @@ last_printed = 0
 
 
 
+def make_expr(base_expr: str, filterfields: dict, joinop: str ="and"):
+
+    assert(joinop in ['and', 'or'])
+
+    subop = {
+        "lt": "<",
+        "le": "<=",
+        "gt": ">",
+        "ge": ">="
+    }
+
+    expr = base_expr
+    for k, v in filterfields.items():
+        if isinstance(v, list):
+            subexpr = f"{k} in {v!r}"
+        else:
+            try:
+                field, op_kind = k.split('__', 1)
+                try:
+                    subexpr = f"{field} {subop[op_kind]} {v!r}"
+                except KeyError:
+                    raise HTTPException(status_code=400, detail=f"Unknown sub-operation {op_kind!r}")
+                
+            except ValueError:
+                # Simple case, just ==
+                subexpr = f"{k} == {v!r}"
+
+        if expr:
+            expr = f'{expr} {joinop} {subexpr}'
+        else:
+            expr = subexpr
+    return expr
+
 def print_summary():
     global last_printed
     if time.time() > last_printed + 60:
@@ -468,7 +503,14 @@ def read_root(request: Request):
         }
 
 @app.post('/ds/{dataset}')
-def ds_post(dataset: str, sq: SearchQuery):
+async def ds_post(dataset: str, request: Request, sq: SearchQuery):
+
+    if sq.filterfields:
+        sq.expr = make_expr(sq.expr, sq.filterfields)
+
+    if not sq.expr:
+        sq.expr = 'True'
+
     try:
         ds = datasets[dataset]
     except KeyError:
