@@ -54,8 +54,8 @@ class Config(DefDict):
 
     def init_master_config(self):
         # apply env variables
-        if os.environ.get('EXACT_DATASET'):
-            for dsline in os.environ.get('EXACT_DATASET').split(' '):
+        if os.environ.get('SASHIMI_DATASET'):
+            for dsline in os.environ.get('SASHIMI_DATASET').split(' '):
                 ds_name, ds_location = dsline.split(':', maxsplit=1)
                 if ds_location.startswith('http://') or ds_location.startswith('https://'):
                     self._d['datasets'][ds_name] = {
@@ -66,17 +66,17 @@ class Config(DefDict):
                         "file": ds_location
                     }
 
-        if os.environ.get('EXACT_TOKEN'):
+        if os.environ.get('SASHIMI_TOKEN'):
             # add token
-            self._d['tokens'].append(os.environ.get('EXACT_TOKEN'))
+            self._d['tokens'].append(os.environ.get('SASHIMI_TOKEN'))
 
-        if os.environ.get('EXACT_TRUSTED_IP'):
+        if os.environ.get('SASHIMI_TRUSTED_IP'):
             # add token
-            self._d['trusted_ips'].extend(os.environ.get('EXACT_TRUSTED_IP').split(' '))
+            self._d['trusted_ips'].extend(os.environ.get('SASHIMI_TRUSTED_IP').split(' '))
 
-        if os.environ.get('EXACT_IP_HEADER'):
+        if os.environ.get('SASHIMI_IP_HEADER'):
             # add token
-            self._d['ip_header'] = os.environ.get('EXACT_IP_HEADER')
+            self._d['ip_header'] = os.environ.get('SASHIMI_IP_HEADER')
 
 
 

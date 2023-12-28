@@ -11,7 +11,7 @@ import sys
 
 from pydantic import ValidationError
 
-from .searchquery import SearchQuery
+from .api.params import SearchQuery
 from .config import Config
 from typing import TYPE_CHECKING, List, Dict
 if TYPE_CHECKING:
@@ -52,6 +52,7 @@ class Dataset():
         self.update_ip = None
         self.path: os.DirEntry = path
         self.status = "OK"
+        self.config_path = config_path
 
         self.postload_model = base_eval_model.clone()
         self.postload_model.nodes.extend(['Call', 'Attribute'])
@@ -59,7 +60,7 @@ class Dataset():
         # self.postload_model.imported_functions = dict(lower=lower)
 
         try:
-            self.config = Config(config_path, role="dataset", parent=self.project.config)
+            self.config = Config(self.config_path, role="dataset", parent=self.project.config)
             # vspec = self.config.get['datasets'][dsname]
         except KeyError as e:
             ds_config = Config(role="dataset", parent=self.project.config)

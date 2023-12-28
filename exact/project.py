@@ -20,10 +20,10 @@ class Project(DefDict):
         super(Project, self).__init__()
 
         self.de = de
-        self.datadir = os.path.join(de, 'data')
+        # self.datadir = os.path.join(de, 'data')
         self.name = de.name
         self.model = model
-        self.config_path = os.path.join(de, 'etc/_exact.yml')
+        self.config_path = os.path.join(de, '__project.yml')
         self.datasets = dict()
         self.app_config = app_config
         self.config = None
@@ -33,10 +33,17 @@ class Project(DefDict):
         except FileNotFoundError:
             self.config = Config(role="project", parent=self.app_config)
 
-        for datafile in os.scandir(self.datadir):
+        for datafile in os.scandir(de):
+
+            if datafile.name.startswith('_'):
+                continue
+
+            if not datafile.name.endswith('.json'):
+                continue
+
+
             dsname = os.path.splitext(datafile.name)[0]
-            ds_config_path = os.path.join(self.de, "etc", dsname+'.yml')
-            print("ds_config:", ds_config_path)
+            ds_config_path = os.path.join(self.de, '_' + dsname + '.yml')
 
             self._d[dsname] = Dataset(name = dsname, project=self, config_path=ds_config_path, 
                                       path = datafile.path,

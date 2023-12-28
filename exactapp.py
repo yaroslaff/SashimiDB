@@ -26,7 +26,6 @@ import sqlalchemy as sa
 
 from evalidate import Expr, EvalException, base_eval_model, EvalModel
 
-from exact.searchquery import SearchQuery
 from exact.dataset import Dataset
 from exact.project import projects
 from exact.config import Config
