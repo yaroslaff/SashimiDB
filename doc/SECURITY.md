@@ -7,7 +7,7 @@ Depending on your project security requirements, you can make your database almo
 
 - All user-submitted expressions are validated with [Evalidate](https://github.com/yaroslaff/evalidate) prior to execution.
 - Exact application (recommeded way) runs inside isolated docker environment and has only public data inside
-- It's possible to runs Exact docker app on different computer, even on different datacenter. So, even if someone could break all security and jump our of docker container, he will be very far from your database and other sensitive data and servers (not closer than from his home).
+- It's possible to run Exact docker app on different computer, even on different datacenter. So, even if someone could break all security and jump out of docker container, he will be very far from your database and other sensitive data and servers (not closer than from his home).
 
 
 ### Use tokens

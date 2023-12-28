@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pyyaml
+requests
+sqlalchemy
+evalidate
+python-dotenv

@@ -1,0 +1,7 @@
+search:
+  index: 
+    expr: "True"
+  one:
+    expr: "True"
+    limit: 1
+

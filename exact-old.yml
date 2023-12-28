@@ -1,0 +1,105 @@
+#
+# Specific datasets
+# 
+
+datasets:
+  dummy:
+    url: https://dummyjson.com/products?limit=100
+    keypath: 
+      - products
+    format: json
+    limit: 20
+    postload:
+      lowdesc: description.lower()
+    search:
+      index:
+        expr: True
+        limit: 20
+        aggregate:
+          - 'min:price'
+          - 'max:price'
+      first1:
+        expr: True
+        limit: 1        
+      first10:
+        expr: True
+        limit: 10
+      first20:
+        expr: True
+        limit: 20
+    allowed_operations:
+      - update
+      - delete
+
+
+  tires:
+    # file: /data/tires.json
+    url: https://tmp.sysattack.com/exact/flat.json
+    limit: 100
+    search:
+      index:
+        expr: True
+        reverse: 0
+        sort: price
+        limit: 20
+        aggregate:
+          - min:price
+          - max:price
+          - distinct:brand
+          - distinct:width
+          - distinct:aspectRatio
+          - distinct:rimDiameter
+
+
+
+#  movies:
+#    url: https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json
+#    postload_lower:
+#      - .
+
+    # Uncomment 'multiply' field to get 100*10K=1M records for bulk test
+    # multiply: 10000
+  #contact:
+  #  db: mysql://scott:tiger@127.0.0.1/contacts
+  #  sql: SELECT * FROM contact
+    
+
+
+
+#
+# Viewdir (can be many, path to directory, where one file is view)
+#
+
+#datadir:
+#  - sample
+
+#
+# Evalidate configuration
+# Be careful when allow new node or attribute
+#
+
+model: extended
+nodes: 
+  - Call
+  - Attribute
+  - List
+attributes:
+  - startswith
+  - endswith
+  - upper
+  - lower
+functions:
+  - int
+  - round
+
+# Default dataset limit
+limit: 100
+
+tokens:
+  - mytoken
+
+# ip_header: CLIENT
+#trusted_ips:
+#  - 127.0.0.0/24
+
+tenants: tenants

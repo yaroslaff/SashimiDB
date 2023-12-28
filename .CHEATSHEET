@@ -1,0 +1,18 @@
+
+### start dev server
+~~~
+export EXACT_TOKEN=envtoken
+uvicorn exactapp:app
+uvicorn --reload exactapp:app
+~~~~
+
+### Load list
+~~~
+http -A bearer -a envtoken PUT http://localhost:8000/ds/sandbox/products ds:=@tests/productlist.json
+~~~
+
+### test queries
+~~~
+http -A bearer -a envtoken POST http://localhost:8000/ds/sandbox/products expr=True limit=1
+http -A bearer -a envtoken POST http://localhost:8000/ds/sandbox/products filter:='{"brand":"Apple" , "price__lt": 1000}'
+~~~

@@ -1,5 +1,5 @@
 # Exact
-Exact is in-memory database with REST API for reactive JavaScript/JAMstack websites.
+Exact is simple and very fast headless CMS with REST API for reactive JavaScript/JAMstack websites. See it as an alternative to Strapi or Algolia.
 
 ## Features
 
@@ -7,7 +7,7 @@ Exact allows anonymous read-only queries (with Cross-origin control only) from w
 
 Query format is simple and very flexible (as flexible as Python expression).
 
-Write operations (such as UPDATE or DELETE records or reload dataset) could be allowed optionally from whitelisted IPs with HTTP Bearer authentication.
+Write operations (such as UPDATE or DELETE records or reload dataset) could be allowed optionally from whitelisted IPs with HTTP Bearer authentication. 
 
 Exact is simple, [secure](doc/SECURITY.md) and very fast (less then half a second for heavy search query in dataset of 1 million records).
 

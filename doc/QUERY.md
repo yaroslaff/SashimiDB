@@ -77,7 +77,7 @@ http POST http://localhost:8000/ds/dummy aggregate[]='max:price' aggregate[]='mi
     "matches": 100,
     "status": "OK",
     "time": 0.0,
-    "trunctated": true
+    "truncated": true
 }
 ~~~
 
