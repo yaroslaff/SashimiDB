@@ -2,6 +2,7 @@ import time
 import datetime
 import os
 import json
+import yaml
 
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.security.http import HTTPBearer, HTTPBasicCredentials
@@ -77,11 +78,36 @@ async def ds_get_config(project_name: str, ds_name: str, request: Request, autho
 
     check_ds_token(request=request, ds=ds, credentials=authorization.credentials)
 
-    if ds.config_path is None:
+    if not os.path.exists(ds.get_config_path()):
         raise HTTPException(status_code=404, detail=f'No config set for {project_name} / {ds_name}')
 
-    return FileResponse(ds.config_path)
+    return FileResponse(ds.get_config_path())
     
+@router.post('/{project_name}/{ds_name}/config')
+async def ds_post_config(project_name: str, ds_name: str, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):
+    """
+        post dataset config
+    """
+
+
+    _, ds = get_project_ds(project_name=project_name, ds_name=ds_name)
+
+    check_ds_token(request=request, ds=ds, credentials=authorization.credentials)
+
+    rawconfig = await request.body()
+    try:
+        yaml.safe_load(rawconfig)
+    except yaml.YAMLError as e:
+        raise HTTPException(status_code=400, detail=f'YAML error: {str(e)}')
+
+    with open(ds.get_config_path(), "wb") as fh:
+        fh.write(rawconfig)
+
+    ds.read_config()
+
+    return PlainTextResponse(f'Saved config for {project_name} / {ds_name}')
+
+
 @router.get('/{project}/{dataset}/{search_name}')
 def ds_named_search(project:str, dataset: str, search_name: str):
     try:
@@ -163,7 +189,15 @@ def rm(project_name: str, request: Request,
     #check token or raise exception
     #check token or raise exception
     # validate_token(request, ds_name, authorization.credentials)
-    project = get_project(project_name=project_name)
+    project, ds = get_project_ds(project_name=project_name)
+
+    check_ds_token(request, ds, authorization.credentials)
+
+    # rm config
+    print("del", ds.get_config_path())
+
+    # rm dataset
+    print("del", ds.path)
 
     try:
         del project[ds_param.name]
@@ -181,8 +215,6 @@ def put(project_name: str, request: Request,
         ds_param: DatasetPutParameter,
         authorization: HTTPBasicCredentials = Depends(auth)):
 
-    print(ds_param.name)
-
     projects.cron()
 
     #check token or raise exception
@@ -192,12 +224,10 @@ def put(project_name: str, request: Request,
 
     try:
         dataset = project[ds_param.name]
-        ds_config = dataset.config
     except KeyError:
         dataset = Dataset(
             name = ds_param.name, 
-            project=project, 
-            config_path=None, 
+            project=project,
             model=project.model)
 
         dataset.config = Config(role="dataset", parent=project.config)
@@ -206,5 +236,9 @@ def put(project_name: str, request: Request,
 
     dataset.set_dataset(ds_param.ds, size=request.headers['content-length'], ip=client_ip(request))
     project[ds_param.name] = dataset
+
+    # save dataset
+    with open(dataset.get_dataset_path(), "w") as fh:
+        json.dump(ds_param.ds, fh)
 
     return PlainTextResponse(f"Loaded dataset {ds_param.name!r} ({len(ds_param.ds)} records)")

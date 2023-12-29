@@ -27,6 +27,7 @@ class Project(DefDict):
         self.datasets = dict()
         self.app_config = app_config
         self.config = None
+        self.path = de.path
 
         try:
             self.config = Config(self.config_path, role="project", parent = self.app_config)
@@ -43,9 +44,8 @@ class Project(DefDict):
 
 
             dsname = os.path.splitext(datafile.name)[0]
-            ds_config_path = os.path.join(self.de, '_' + dsname + '.yml')
 
-            self._d[dsname] = Dataset(name = dsname, project=self, config_path=ds_config_path, 
+            self._d[dsname] = Dataset(name = dsname, project=self, 
                                       path = datafile.path,
                                       model=self.model)
 

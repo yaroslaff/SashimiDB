@@ -21,9 +21,13 @@ class Config(DefDict):
 
         self._make_default_config()
 
-        if self.path:
-            with open(self.path) as f:
-                self._d.update(yaml.load(f, Loader=SafeLoader))
+        try:
+            if self.path:
+                with open(self.path) as f:
+                    self._d.update(yaml.safe_load(f))
+        
+        except (yaml.YAMLError, TypeError) as e:
+            print(f"YAML error in {self.path}: {e}")
 
         self.inherit()
 

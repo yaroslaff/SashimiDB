@@ -41,7 +41,7 @@ def get_deep_size(obj, seen=None):
 
 
 class Dataset():
-    def __init__(self, name: str, project: "Project", config_path: str, model: EvalModel, path: os.DirEntry = None):
+    def __init__(self, name: str, project: "Project", model: EvalModel, path: os.DirEntry = None):
         self.name = name
         self._data = None
         self.model = model
@@ -52,20 +52,29 @@ class Dataset():
         self.update_ip = None
         self.path: os.DirEntry = path
         self.status = "OK"
-        self.config_path = config_path
 
         self.postload_model = base_eval_model.clone()
         self.postload_model.nodes.extend(['Call', 'Attribute'])
         self.postload_model.attributes.extend(['upper', 'lower'])
         # self.postload_model.imported_functions = dict(lower=lower)
 
+        self.read_config()
+
+
+        if path:
+            self._data = self.load_file(self.path, format=self.config.get('format'))
+
+    def get_config_path(self):
+        return os.path.join(self.project.path, '_' + self.name + '.yaml')
+
+    def get_dataset_path(self):
+        return os.path.join(self.project.path, self.name + '.json')
+
+    def read_config(self):
         try:
-            self.config = Config(self.config_path, role="dataset", parent=self.project.config)
-            # vspec = self.config.get['datasets'][dsname]
-        except KeyError as e:
-            ds_config = Config(role="dataset", parent=self.project.config)
-
-
+            self.config = Config(self.get_config_path(), role="dataset", parent=self.project.config)
+        except FileNotFoundError as e:
+            self.config = Config(role="dataset", parent=self.project.config)
 
         self.named_search = dict()
         vspec_searches = self.config.get('search')
@@ -81,12 +90,8 @@ class Dataset():
 
         self.set_defaults()
 
-        if False:
-            self.load()
 
-        if path:
-            self._data = self.load_file(self.path, format=self.config.get('format'))
-    
+
     def set_defaults(self):
         """
             set defaults variables for dataset
@@ -100,63 +105,8 @@ class Dataset():
     def reload(self):
         self.check_allowed_operation("reload")
         self.drop_cache()
-        self.load()
         return dict(status=f"reloaded ds {self.name!r}")
 
-    def load(self):
-
-        return
-
-        def recursive_lower(x):
-            if isinstance(x, str):
-                return x.lower()
-            elif isinstance(x,list):
-                return [ recursive_lower(el) for el in x ]
-            elif isinstance(x, dict):
-                for k, v in x.items():
-                    x[k] = recursive_lower(v)
-            else:
-                return x
-
-        if self.config.get('file'):            
-            data = self.load_file(self.config['file'], format=self.config.get('format'))
-        elif self.config.get('url'):
-            data = self.load_url(self.config['url'], format=self.config.get('format'))
-        elif self.config.get('db'):            
-            data = self.load_db(self.config['db'], sql=self.config.get('sql'))
-
-        assert data is not None
-
-        if self.config.get('keypath'):
-            for k in self.config.get('keypath'):
-                data = data[k]
-
-        if 'postload' in self.config:
-            for f, src in self.config['postload'].items():
-                expr = Expr(src, model=self.postload_model)
-                for el in data:
-                    el[f] = eval(expr.code, None, el)
-
-        if 'postload_lower' in self.config:
-            for f in self.config['postload_lower']:                
-                for el in data:
-                    if f == '.':
-                        el = recursive_lower(el)
-                    else:
-                        try:
-                            el[f] = recursive_lower(el[f])
-                        except KeyError:
-                            pass
-
-        if self.config.get('multiply'):
-            data = data * int(self.config.get('multiply'))
-
-
-
-        assert isinstance(data, list)
-        print(f"Dataset {self.name}: {len(data)} items")
-
-        self._data = data
 
     def set_dataset(self, data, size=None, ip=None):
         self._data = data
