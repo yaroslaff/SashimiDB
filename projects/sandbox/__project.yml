@@ -1,3 +1,7 @@
 sandbox: true
 sandbox_expire: 20
+xxx: 123
+tokens:
+  - aaa
+  - bbb
 

@@ -113,6 +113,8 @@ async def ds_get_config(project_name: str, ds_name: str, request: Request, autho
 
     check_token(request=request, config=ds.config, credentials=authorization.credentials)
 
+    print("check", ds.get_config_path())
+
     if not os.path.exists(ds.get_config_path()):
         raise HTTPException(status_code=404, detail=f'No config set for {project_name} / {ds_name}')
 
@@ -244,15 +246,17 @@ def rm(project_name: str, request: Request,
     #check token or raise exception
     #check token or raise exception
     # validate_token(request, ds_name, authorization.credentials)
-    project, ds = get_project_ds(project_name=project_name)
+    project, ds = get_project_ds(project_name=project_name, ds_name=ds_param.name)
 
     check_token(request, ds.config, authorization.credentials)
 
     # rm config
-    print("del", ds.get_config_path())
+    if os.path.exists(ds.get_config_path()):
+        os.unlink(ds.get_config_path())
 
     # rm dataset
-    print("del", ds.path)
+    if os.path.exists(ds.path):
+        os.unlink(ds.path)
 
     try:
         del project[ds_param.name]
@@ -271,9 +275,6 @@ def put(project_name: str, request: Request,
         authorization: HTTPBasicCredentials = Depends(auth)):
 
     projects.cron()
-
-
-    print(f"PUT with secret {ds_param.secret!r}")
 
     #check token or raise exception
     #check token or raise exception
