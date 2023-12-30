@@ -52,6 +52,7 @@ class Dataset():
         self.update_ip = None
         self.path: os.DirEntry = path
         self.status = "OK"
+        self.secret = None
 
         self.postload_model = base_eval_model.clone()
         self.postload_model.nodes.extend(['Call', 'Attribute'])
@@ -60,9 +61,8 @@ class Dataset():
 
         self.read_config()
 
-
         if path:
-            self._data = self.load_file(self.path, format=self.config.get('format'))
+            self.set_dataset(data = self.load_file(self.path), ip=None)
 
     def get_config_path(self):
         return os.path.join(self.project.path, '_' + self.name + '.yaml')
@@ -108,12 +108,13 @@ class Dataset():
         return dict(status=f"reloaded ds {self.name!r}")
 
 
-    def set_dataset(self, data, size=None, ip=None):
+    def set_dataset(self, data, ip=None, secret: str = None):
         self._data = data
         self.loaded = int(time.time())
         # self.size = size
         self.update_size()
         self.load_ip = ip
+        self.secret = secret
 
     def load_db(self, dburl, sql):
         assert(sql is not None)
@@ -125,30 +126,11 @@ class Dataset():
         return data
 
 
-    def load_file(self, path: os.DirEntry, format=None) -> List[Dict]:
+    def load_file(self, path: os.DirEntry) -> List[Dict]:
 
         print(f".. load dataset {self.name!r} from {path!r}")
-        
-        if format is None:
-            # guess by extensions            
-            if path.lower().endswith('.json'):
-                format = 'json'
-            elif path.lower().endswith('.yaml') or path.lower().endswith('.yml'):
-                format = 'yaml'
-        
-        # default
-        if format is None:
-            format = 'json'
-
-        if format == 'json':
-            with open(path) as fh:
-                return json.load(fh)
-                
-        elif format == 'yaml':
-            with open(path) as f:
-                return yaml.load(f, Loader=SafeLoader)
-        else:
-            raise ValueError(f'Unknown format: {format!r}')
+        with open(path) as fh:
+            return json.load(fh)
 
     def load_url(self, url, format=None):
         print(f".. load dataset {self.name!r} from {url!r}")

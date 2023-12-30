@@ -23,16 +23,12 @@ class Project(DefDict):
         # self.datadir = os.path.join(de, 'data')
         self.name = de.name
         self.model = model
-        self.config_path = os.path.join(de, '__project.yml')
         self.datasets = dict()
         self.app_config = app_config
         self.config = None
         self.path = de.path
 
-        try:
-            self.config = Config(self.config_path, role="project", parent = self.app_config)
-        except FileNotFoundError:
-            self.config = Config(role="project", parent=self.app_config)
+        self.read_config()
 
         for datafile in os.scandir(de):
 
@@ -48,6 +44,16 @@ class Project(DefDict):
             self._d[dsname] = Dataset(name = dsname, project=self, 
                                       path = datafile.path,
                                       model=self.model)
+
+    def get_config_path(self) -> str:
+        return os.path.join(self.de, '__project.yml')
+
+    def read_config(self):
+        try:
+            self.config = Config(self.get_config_path(), role="project", parent = self.app_config)
+        except FileNotFoundError:
+            self.config = Config(role="project", parent=self.app_config)
+
 
     def __repr__(self):
         return f'Project {self.name!r} ({" ".join(self._d)})'

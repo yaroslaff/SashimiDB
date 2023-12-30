@@ -6,7 +6,7 @@ from fastapi import Request, HTTPException
 
 from ..project import Project, projects
 from ..dataset import Dataset
-
+from ..config import Config
 
 
 def make_expr(base_expr: str, filterfields: dict, joinop: str ="and"):
@@ -62,11 +62,11 @@ def get_project_ds(project_name: str, ds_name: str) -> (Project, Dataset):
 
     return (project, dataset)
 
-def check_ds_token(request, ds: Dataset, credentials: str):
-    tokens = ds.config['tokens']
+def check_token(request: Request, config: Config, credentials: str):
+    tokens = config['tokens']
 
-    if ds.config.get('ip_header'):
-        client_ip_here = request.headers.get(ds.config.get('ip_header'))
+    if config.get('ip_header'):
+        client_ip_here = request.headers.get(config.get('ip_header'))
     else:
         client_ip_here = request.client.host
 
@@ -75,7 +75,7 @@ def check_ds_token(request, ds: Dataset, credentials: str):
         raise HTTPException(status_code=401, detail=f'Cannot parse ip from {client_ip_here!r} (ip_header: {config.get("ip_header")!r}')
     client_ip = m.group(0)
    
-    trusted_ips = ds.config['trusted_ips']
+    trusted_ips = config['trusted_ips']
 
     if trusted_ips:
         if not any(map(lambda subnet:  ipaddress.ip_address(client_ip) in ipaddress.ip_network(subnet), trusted_ips)):

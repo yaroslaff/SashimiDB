@@ -15,22 +15,28 @@ from ..project import Project, projects
 from ..dataset import Dataset
 from ..config import Config
 from .params import DatasetDeleteParameter, DatasetPutParameter, SearchQuery
-from .utils import make_expr, get_project, get_project_ds, check_ds_token, client_ip
+from .utils import make_expr, get_project, get_project_ds, check_token, client_ip
 
 router = APIRouter()
 auth = HTTPBearer()
 
 
-@router.get('/{project}')
-def ds_project_info(project:str, authorization: HTTPBasicCredentials = Depends(auth)):
-    project = projects[project]
-    tokens = project.config['tokens']
+@router.get('/{project_name}')
+def ds_project_info(project_name:str, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):
 
-    if authorization.credentials not in tokens:
-        raise HTTPException(status_code=401, detail=f'Token {authorization.credentials!r} not found, sorry')
+    project = get_project(project_name)
+
+    check_token(request=request, config=project.config, credentials=authorization.credentials )
+
+    #if authorization.credentials not in tokens:
+    #    raise HTTPException(status_code=401, detail=f'Token {authorization.credentials!r} not found, sorry')
 
     data = dict()
     data['project'] = project.name
+
+    if project.is_sandbox():
+        data['sandbox'] = True
+
     data['datasets'] = dict()
     for dsname, ds in project._d.items():
         data['datasets'][dsname] = {
@@ -38,11 +44,103 @@ def ds_project_info(project:str, authorization: HTTPBasicCredentials = Depends(a
             "size": ds.size,
             "status": ds.status,
             "load IP": ds.load_ip,
-            "update IP": ds.update_ip,
+            "update IP": ds.update_ip,            
             "loaded": datetime.datetime.utcfromtimestamp(ds.loaded).strftime('%Y-%m-%d %H:%M:%S')
         }
+
+        if project.is_sandbox():
+            data['datasets'][dsname]['secret'] = bool(ds.secret)
     
     return data
+
+
+@router.get('/{project_name}/_config')
+async def project_get_config(project_name: str, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):
+    """
+        get project config
+    """
+
+    project = get_project(project_name=project_name)
+
+    if project.is_sandbox():
+        raise HTTPException(status_code=401, detail=f'Cannot get project config for sandbox')
+
+    check_token(request=request, config=project.config, credentials=authorization.credentials)
+
+    if not os.path.exists(project.get_config_path()):
+        raise HTTPException(status_code=404, detail=f'No config set for {project_name}')
+
+    return FileResponse(project.get_config_path())
+
+    
+@router.post('/{project_name}/_config')
+async def project_post_config(project_name: str, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):
+    """
+        post project config
+    """
+
+    project = get_project(project_name=project_name)
+
+    if project.is_sandbox():
+        raise HTTPException(status_code=401, detail=f'Cannot set project config for sandbox')
+
+
+    check_token(request=request, config=project.config, credentials=authorization.credentials)
+
+    rawconfig = await request.body()
+    try:
+        yaml.safe_load(rawconfig)
+    except yaml.YAMLError as e:
+        raise HTTPException(status_code=400, detail=f'YAML error: {str(e)}')
+
+    with open(project.get_config_path(), "wb") as fh:
+        fh.write(rawconfig)
+
+    project.read_config()
+
+    return PlainTextResponse(f'Saved config for {project_name}')
+
+
+
+@router.get('/{project_name}/{ds_name}/_config')
+async def ds_get_config(project_name: str, ds_name: str, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):
+    """
+        get dataset config
+    """
+
+    _, ds = get_project_ds(project_name=project_name, ds_name=ds_name)
+
+
+    check_token(request=request, config=ds.config, credentials=authorization.credentials)
+
+    if not os.path.exists(ds.get_config_path()):
+        raise HTTPException(status_code=404, detail=f'No config set for {project_name} / {ds_name}')
+
+    return FileResponse(ds.get_config_path())
+    
+@router.post('/{project_name}/{ds_name}/_config')
+async def ds_post_config(project_name: str, ds_name: str, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):
+    """
+        post dataset config
+    """
+
+
+    _, ds = get_project_ds(project_name=project_name, ds_name=ds_name)
+
+    check_token(request=request, config=ds.config, credentials=authorization.credentials)
+
+    rawconfig = await request.body()
+    try:
+        yaml.safe_load(rawconfig)
+    except yaml.YAMLError as e:
+        raise HTTPException(status_code=400, detail=f'YAML error: {str(e)}')
+
+    with open(ds.get_config_path(), "wb") as fh:
+        fh.write(rawconfig)
+
+    ds.read_config()
+
+    return PlainTextResponse(f'Saved config for {project_name} / {ds_name}')
 
 
 @router.post('/{project_name}/{ds_name}')
@@ -66,46 +164,6 @@ async def ds_post(project_name: str, ds_name: str, request: Request, sq: SearchQ
     r['time'] = round(time.time() - start, 3)
     return r
 
-
-@router.get('/{project_name}/{ds_name}/config')
-async def ds_get_config(project_name: str, ds_name: str, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):
-    """
-        get dataset config
-    """
-
-    _, ds = get_project_ds(project_name=project_name, ds_name=ds_name)
-
-
-    check_ds_token(request=request, ds=ds, credentials=authorization.credentials)
-
-    if not os.path.exists(ds.get_config_path()):
-        raise HTTPException(status_code=404, detail=f'No config set for {project_name} / {ds_name}')
-
-    return FileResponse(ds.get_config_path())
-    
-@router.post('/{project_name}/{ds_name}/config')
-async def ds_post_config(project_name: str, ds_name: str, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):
-    """
-        post dataset config
-    """
-
-
-    _, ds = get_project_ds(project_name=project_name, ds_name=ds_name)
-
-    check_ds_token(request=request, ds=ds, credentials=authorization.credentials)
-
-    rawconfig = await request.body()
-    try:
-        yaml.safe_load(rawconfig)
-    except yaml.YAMLError as e:
-        raise HTTPException(status_code=400, detail=f'YAML error: {str(e)}')
-
-    with open(ds.get_config_path(), "wb") as fh:
-        fh.write(rawconfig)
-
-    ds.read_config()
-
-    return PlainTextResponse(f'Saved config for {project_name} / {ds_name}')
 
 
 @router.get('/{project}/{dataset}/{search_name}')
@@ -144,7 +202,7 @@ def status(project:str, dataset: str):
 def ds_patch(project_name: str, ds_name: str, sq: SearchQuery, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):
 
     _, ds = get_project_ds(project_name=project_name, ds_name=ds_name)
-    check_ds_token(request, ds, authorization.credentials)
+    check_token(request, config=ds.config, credentials=authorization.credentials)
     #check token or raise exception
 
     start = time.time()
@@ -166,11 +224,8 @@ def ds_put(project_name: str, ds_name: str, sq: SearchQuery, request: Request, a
     """ INSERT sq.data to dataset """
 
     project, ds = get_project_ds(project_name=project_name, ds_name=ds_name)
-    check_ds_token(request, ds, authorization.credentials)
+    check_token(request, config=ds.config, credentials=authorization.credentials)
     #check token or raise exception
-
-    print("now, json data...")
-    print(sq.data)
 
     data = json.loads(sq.data)
 
@@ -191,7 +246,7 @@ def rm(project_name: str, request: Request,
     # validate_token(request, ds_name, authorization.credentials)
     project, ds = get_project_ds(project_name=project_name)
 
-    check_ds_token(request, ds, authorization.credentials)
+    check_token(request, ds.config, authorization.credentials)
 
     # rm config
     print("del", ds.get_config_path())
@@ -217,6 +272,9 @@ def put(project_name: str, request: Request,
 
     projects.cron()
 
+
+    print(f"PUT with secret {ds_param.secret!r}")
+
     #check token or raise exception
     #check token or raise exception
     # validate_token(request, ds_name, authorization.credentials)
@@ -232,13 +290,26 @@ def put(project_name: str, request: Request,
 
         dataset.config = Config(role="dataset", parent=project.config)
 
-    check_ds_token(request, dataset, authorization.credentials)
+    check_token(request, dataset.config, authorization.credentials)
 
-    dataset.set_dataset(ds_param.ds, size=request.headers['content-length'], ip=client_ip(request))
+
+    if project.is_sandbox() and dataset.secret:
+        if ds_param.secret != dataset.secret:
+            raise HTTPException(status_code=401, 
+                                detail=f'secret mismatch')
+
+
+    if project.is_sandbox():
+        secret = ds_param.secret
+    else:
+        secret = None
+
+    dataset.set_dataset(ds_param.ds, ip=client_ip(request), secret=secret)
     project[ds_param.name] = dataset
 
-    # save dataset
-    with open(dataset.get_dataset_path(), "w") as fh:
-        json.dump(ds_param.ds, fh)
+    # save dataset (if not sandbox)
+    if not project.is_sandbox():
+        with open(dataset.get_dataset_path(), "w") as fh:
+            json.dump(ds_param.ds, fh)
 
     return PlainTextResponse(f"Loaded dataset {ds_param.name!r} ({len(ds_param.ds)} records)")

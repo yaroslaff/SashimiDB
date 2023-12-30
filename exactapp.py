@@ -119,6 +119,7 @@ def find_config():
 def main():
     app.include_router(index_router)
     app.include_router(prefix="/ds", router=project_router)
+
     init()
 
 main()

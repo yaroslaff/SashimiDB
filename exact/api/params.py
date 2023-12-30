@@ -2,7 +2,8 @@
 import string
 from typing import Optional, Union, List, Dict
 from typing_extensions import Annotated
-from pydantic import BaseModel, StrictInt, StrictFloat, StrictStr, validator
+from pydantic import BaseModel, StrictInt, StrictFloat, StrictStr, validator, Field
+
 
 
 class DatasetDeleteParameter(BaseModel):
@@ -10,9 +11,11 @@ class DatasetDeleteParameter(BaseModel):
 
 
 
+
 class DatasetPutParameter(BaseModel):
-    ds: list
-    name: str
+    ds: list = Field(description='dataset itself, list of dicts')
+    name: str = Field(description='name of dataset')
+    secret: Optional[str] = Field(default=None, description='Secret for dataset (only in sandbox)')
 
     @validator('name')
     def valid_name(cls, name):
