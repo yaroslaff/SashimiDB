@@ -15,7 +15,7 @@ from ..project import Project, projects
 from ..dataset import Dataset
 from ..config import Config
 from .params import DatasetDeleteParameter, DatasetPutParameter, SearchQuery
-from .utils import make_expr, get_project, get_project_ds, check_token, client_ip
+from .utils import make_expr, get_project, get_project_ds, check_token, check_permission, client_ip
 
 router = APIRouter()
 auth = HTTPBearer()
@@ -43,7 +43,7 @@ def ds_project_info(project_name:str, request: Request, authorization: HTTPBasic
             "items": len(ds._data),
             "size": ds.size,
             "status": ds.status,
-            "load IP": ds.load_ip,
+            "local": ds.is_local(),
             "update IP": ds.update_ip,            
             "loaded": datetime.datetime.utcfromtimestamp(ds.loaded).strftime('%Y-%m-%d %H:%M:%S')
         }
@@ -62,10 +62,8 @@ async def project_get_config(project_name: str, request: Request, authorization:
 
     project = get_project(project_name=project_name)
 
-    if project.is_sandbox():
-        raise HTTPException(status_code=401, detail=f'Cannot get project config for sandbox')
-
     check_token(request=request, config=project.config, credentials=authorization.credentials)
+    check_permission(project, ds=None, op='getpconf')
 
     if not os.path.exists(project.get_config_path()):
         raise HTTPException(status_code=404, detail=f'No config set for {project_name}')
@@ -81,11 +79,9 @@ async def project_post_config(project_name: str, request: Request, authorization
 
     project = get_project(project_name=project_name)
 
-    if project.is_sandbox():
-        raise HTTPException(status_code=401, detail=f'Cannot set project config for sandbox')
-
 
     check_token(request=request, config=project.config, credentials=authorization.credentials)
+    check_permission(project, ds=None, op='setpconf')
 
     rawconfig = await request.body()
     try:
@@ -113,8 +109,6 @@ async def ds_get_config(project_name: str, ds_name: str, request: Request, autho
 
     check_token(request=request, config=ds.config, credentials=authorization.credentials)
 
-    print("check", ds.get_config_path())
-
     if not os.path.exists(ds.get_config_path()):
         raise HTTPException(status_code=404, detail=f'No config set for {project_name} / {ds_name}')
 
@@ -125,11 +119,10 @@ async def ds_post_config(project_name: str, ds_name: str, request: Request, auth
     """
         post dataset config
     """
-
-
-    _, ds = get_project_ds(project_name=project_name, ds_name=ds_name)
+    project, ds = get_project_ds(project_name=project_name, ds_name=ds_name)
 
     check_token(request=request, config=ds.config, credentials=authorization.credentials)
+
 
     rawconfig = await request.body()
     try:
@@ -203,9 +196,12 @@ def status(project:str, dataset: str):
 @router.patch('/{project_name}/{ds_name}')
 def ds_patch(project_name: str, ds_name: str, sq: SearchQuery, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):
 
-    _, ds = get_project_ds(project_name=project_name, ds_name=ds_name)
+    project, ds = get_project_ds(project_name=project_name, ds_name=ds_name)
     check_token(request, config=ds.config, credentials=authorization.credentials)
     #check token or raise exception
+
+    check_permission(project, ds=None, op=sq.op)
+
 
     start = time.time()
     if sq.op == "delete":        
@@ -249,13 +245,14 @@ def rm(project_name: str, request: Request,
     project, ds = get_project_ds(project_name=project_name, ds_name=ds_param.name)
 
     check_token(request, ds.config, authorization.credentials)
+    check_permission(project, ds=ds, op="rm")
 
     # rm config
-    if os.path.exists(ds.get_config_path()):
+    if ds.get_config_path() and os.path.exists(ds.get_config_path()):
         os.unlink(ds.get_config_path())
 
     # rm dataset
-    if os.path.exists(ds.path):
+    if ds.path and os.path.exists(ds.path):
         os.unlink(ds.path)
 
     try:
@@ -283,7 +280,17 @@ def put(project_name: str, request: Request,
 
     try:
         dataset = project[ds_param.name]
+        config = dataset.config
+            
     except KeyError:
+        dataset = None
+        config = project.config
+    
+
+    check_token(request, config, authorization.credentials)
+    check_permission(project, ds=dataset, op="upload")
+
+    if dataset is None:
         dataset = Dataset(
             name = ds_param.name, 
             project=project,
@@ -291,13 +298,13 @@ def put(project_name: str, request: Request,
 
         dataset.config = Config(role="dataset", parent=project.config)
 
-    check_token(request, dataset.config, authorization.credentials)
-
 
     if project.is_sandbox() and dataset.secret:
         if ds_param.secret != dataset.secret:
             raise HTTPException(status_code=401, 
                                 detail=f'secret mismatch')
+
+
 
 
     if project.is_sandbox():

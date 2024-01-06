@@ -49,7 +49,7 @@ class SearchQuery(BaseModel):
     data: str = None
     
     # field to update
-    update_field: str = None
+    # update_field: str = None
     
-    # update_expr: Expression to set new value in update
-    update_data: str =None
+    # update: dict of fields to set on update
+    update: dict = None

@@ -1,5 +1,6 @@
 import re
 import ipaddress
+from typing import Tuple
 
 from fastapi import Request, HTTPException
 
@@ -51,7 +52,7 @@ def get_project(project_name: str) -> Project:
     return project
 
 
-def get_project_ds(project_name: str, ds_name: str) -> (Project, Dataset):
+def get_project_ds(project_name: str, ds_name: str) -> Tuple[Project, Dataset]:
 
     project = get_project(project_name=project_name)
 
@@ -83,6 +84,17 @@ def check_token(request: Request, config: Config, credentials: str):
 
     if credentials not in tokens:
         raise HTTPException(status_code=401, detail=f'Token {credentials!r} not found, sorry')
+
+def check_permission(project: Project, ds: Dataset, op: str):
+    if project.is_sandbox():
+        if op in ['update', 'delete', 'insert', 'getconf', 'setconf', 'getpconf', 'setpconf']:
+            raise HTTPException(status_code=401, detail=f'Operation {op!r} not allowed for this project')
+        if ds and ds.is_local() and op in ["rm", "upload"]:
+            raise HTTPException(status_code=401, detail=f'Operation {op!r} not allowed for local dataset')
+    else:
+        # for non-sandbox projects, everything allowed (with valid token)
+        pass
+
 
 
 def client_ip(request: Request, header=None):

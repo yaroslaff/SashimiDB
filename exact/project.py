@@ -66,6 +66,10 @@ class Project(DefDict):
             now = time.time()            
             delete = list()
             for dsname, ds in self._d.items():
+                if ds.is_local():
+                    # local datasets never expire
+                    continue
+                
                 if now > ds.loaded + self.config['sandbox_expire']:
                     delete.append(dsname)
             for dsname in delete:

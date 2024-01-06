@@ -108,6 +108,9 @@ class Dataset():
         return dict(status=f"reloaded ds {self.name!r}")
 
 
+    def is_local(self):
+        return not bool(self.load_ip)
+
     def set_dataset(self, data, ip=None, secret: str = None):
         self._data = data
         self.loaded = int(time.time())
@@ -294,11 +297,8 @@ class Dataset():
         exceptions = 0
         last_exception = None
 
-        if sq.update_field is None:
-            raise HTTPException(status_code=400, detail=f'need update_field')
-
-        if sq.update_data is None:
-            raise HTTPException(status_code=400, detail=f'need update_data')
+        if sq.update is None:
+            raise HTTPException(status_code=400, detail=f'need update')
 
 
         try:
@@ -308,21 +308,20 @@ class Dataset():
 
         matches = 0
 
-        try:
-            value = json.loads(sq.update_data)
-        except json.JSONDecodeError as e:
-            raise HTTPException(status_code=400, detail=f"JSON error: {str(e)}")
+        value = sq.update
 
         for item in self._data:
             try:
                 if eval(expr.code, None, item):
                     matches += 1
                     # value = eval(update_expr.code, None, item)
-                    item[sq.update_field] = value
+                    # item[sq.update_field] = value
+                    item.update(value)
 
             except Exception as e:
                 exceptions += 1
                 last_exception = str(e)
+
 
         self.update_size()
         self.update_ip = ip
