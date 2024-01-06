@@ -1,0 +1,10 @@
+# version: 6
+search:
+  index: 
+    expr: "True"
+  one:
+    expr: "True"
+    limit: 1
+  two:
+    expr: "id==6"
+
