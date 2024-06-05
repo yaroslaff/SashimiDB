@@ -1,10 +1,10 @@
-# Exact configuration
+# Sashimi configuration
 
 ## Environment variables
 
-Env variables `EXACT_TOKEN` and `EXACT_TRUSTED_IP` (if preset) will be added to proper lists. `EXACT_IP_HEADER` will replace `ip_header` from config.
+Env variables `SASHIMI_TOKEN` and `SASHIMI_TRUSTED_IP` (if preset) will be added to proper lists. `SASHIMI_IP_HEADER` will replace `ip_header` from config.
 
-`EXACT_DATASET` to add new dataset from environment, format is  `datasetname:path/dataset.json datasetname2:https://example.com/dataset.json` or `datasetname:https://example.com/dataset.json` (no other dataset options are supported when loading dataset this way, default settings are used)
+`SASHIMI_DATASET` to add new dataset from environment, format is  `datasetname:path/dataset.json datasetname2:https://example.com/dataset.json` or `datasetname:https://example.com/dataset.json` (no other dataset options are supported when loading dataset this way, default settings are used)
 
 Environment variables automatically loaded from `.env` file.
 

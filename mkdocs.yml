@@ -1,0 +1,9 @@
+site_name: My Docs
+theme: windmill
+nav:
+  - Home: index.md
+  - Configuration: CONFIG.md
+  - Query: QUERY.md
+  - Security: SECURITY.md
+  - Troubleshooting: TROUBLESHOOTING.md
+
