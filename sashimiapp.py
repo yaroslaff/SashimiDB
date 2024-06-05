@@ -92,6 +92,8 @@ def init():
 
     config = Config(os.environ.get("EXACT_CONFIG", find_config()), role="master")
 
+    print(config)
+
     model = get_evalidate_model(config)
     projects.config = config
     if 'projects' in config:
