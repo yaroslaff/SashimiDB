@@ -16,9 +16,37 @@ from ..dataset import Dataset
 from ..config import Config
 from .params import DatasetDeleteParameter, DatasetPutParameter, SearchQuery
 from .utils import make_expr, get_project, get_project_ds, check_token, check_permission, client_ip
+from ..exception import ProjectExistsException
 
 router = APIRouter()
 auth = HTTPBearer()
+
+
+class NewProject(BaseModel):
+    name: str
+
+@router.post('/')
+def new_project(np: NewProject, request: Request, authorization: HTTPBasicCredentials = Depends(auth)):
+    check_token(request=request, config=projects.config, credentials=authorization.credentials )
+    try:
+        key = projects.create(np.name)
+    except ProjectExistsException as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    print("OK")
+    
+    return dict(apikey=key)
+
+class ProjectOp(BaseModel):
+    op: str
+
+@router.post('/{project_name}')
+def project_op(project_name: str, request: Request, op: ProjectOp, 
+                authorization: HTTPBasicCredentials = Depends(auth)):
+    check_token(request=request, config=projects.config, credentials=authorization.credentials )
+    project = get_project(project_name=project_name)
+    if op.op == 'new-key':
+        apikey = project.new_key()
+        return dict(apikey=apikey)
 
 
 @router.get('/{project_name}')
@@ -45,7 +73,7 @@ def ds_project_info(project_name:str, request: Request, authorization: HTTPBasic
             "status": ds.status,
             "local": ds.is_local(),
             "update IP": ds.update_ip,            
-            "loaded": datetime.datetime.utcfromtimestamp(ds.loaded).strftime('%Y-%m-%d %H:%M:%S')
+            "loaded": datetime.datetime.fromtimestamp(ds.loaded, timestamp=datetime.UTC).strftime('%Y-%m-%d %H:%M:%S')
         }
 
         if project.is_sandbox():

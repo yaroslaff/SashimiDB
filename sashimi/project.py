@@ -2,12 +2,17 @@ import os
 import time
 import yaml
 from yaml.loader import SafeLoader
+from pathlib import Path
+import string
+import random
 
 from typing import Dict
+
 
 from .dataset import Dataset
 from .config import Config
 from .defdict import DefDict
+from .exception import ProjectExistsException
 
 from evalidate import EvalModel
 
@@ -26,7 +31,7 @@ class Project(DefDict):
         self.datasets = dict()
         self.app_config = app_config
         self.config = None
-        self.path = de.path
+        self.path = str(de)
 
         self.read_config()
 
@@ -74,12 +79,33 @@ class Project(DefDict):
                     delete.append(dsname)
             for dsname in delete:
                 del self._d[dsname]
+    
+    @staticmethod
+    def create(de: os.DirEntry):        
+        config = Config(role="project", inherit=False)
+        config.save(de / '__project.yml')
+
+    def new_key(self):
+
+        # get NOT-INHERITED config
+        config = Config(self.get_config_path(), inherit=False)
+
+        token = "".join(random.choices(string.ascii_letters + string.digits, k=50))
+        if not 'tokens' in self.config:
+            config['tokens'] = list()
+        config['tokens'].append(token)
+        config.save()
+
+        self.read_config()
+
+        return token
 
 class Projects():
 
     projects: dict[str, Project]    
 
     def __init__(self):
+        self.path = None
         self.projects = dict()
         self.app_config = None
         self.last_cron = time.time()
@@ -93,13 +119,28 @@ class Projects():
     def config(self, config):
         self.app_config = config
 
+    def create(self, name: str):
+        pdir = self.path / name
+
+        if pdir.exists():
+            raise ProjectExistsException(f"project {name!r} already exists")
+        
+        pdir.mkdir(parents=False)
+        apikey = Project.create(pdir)
+        p = Project(pdir, model=self.model, app_config=self.app_config)
+        self.projects[name] = p
+        apikey = p.new_key()
+        return apikey
+
     def read(self, path: str, model: EvalModel):
+        self.path = Path(path)
+        self.model = model
 
         print(f"load projects from path {path!r}")
 
-        for tdir in os.scandir(path):
+        for tdir in os.scandir(self.path):
             if tdir.is_dir():
-                self.projects[tdir.name] = Project(tdir, model=model, app_config=self.app_config)
+                self.projects[tdir.name] = Project(tdir, model=self.model, app_config=self.app_config)
 
     def cron(self):
 

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "exact"
+name = "sashimi"
 version = "0.1.0"
 description = "Exact search engine"
 authors = ["Yaroslav <yaroslaff@gmail.com>"]

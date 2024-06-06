@@ -26,11 +26,11 @@ import sqlalchemy as sa
 
 from evalidate import Expr, EvalException, base_eval_model, EvalModel
 
-from exact.dataset import Dataset
-from exact.project import projects
-from exact.config import Config
-from exact.api.query import router as index_router
-from exact.api.project import router as project_router
+from sashimi.dataset import Dataset
+from sashimi.project import projects
+from sashimi.config import Config
+from sashimi.api.query import router as index_router
+from sashimi.api.project import router as project_router
 
 
 ### Global variables ###
@@ -90,7 +90,7 @@ def init():
 
     # config = get_config()
 
-    config = Config(os.environ.get("EXACT_CONFIG", find_config()), role="master")
+    config = Config(os.environ.get("SASHIMI_CONFIG", find_config()), role="master")
 
     print(config)
 
@@ -105,9 +105,9 @@ def init():
 
 def find_config():
     locations = [
-        'exact.yml',
-        '/data/etc/exact.yml',
-        '/etc/exact.yml',
+        'sashimi.yml',
+        '/data/etc/sashimi.yml',
+        '/etc/sashimi.yml',
     ]
 
     locations = [ p for p in locations if os.path.exists(p) ]

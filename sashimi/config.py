@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 
 import yaml
 from yaml.loader import SafeLoader
@@ -7,7 +8,7 @@ from .defdict import DefDict
 from typing import Self
 
 class Config(DefDict):
-    def __init__(self, path: str = None, role: str = None, parent: Self = None):
+    def __init__(self, path: str = None, role: str = None, parent: Self = None, inherit=True):
 
         super(Config, self).__init__()
 
@@ -29,7 +30,8 @@ class Config(DefDict):
         except (yaml.YAMLError, TypeError) as e:
             print(f"YAML error in {self.path}: {e}")
 
-        self.inherit()
+        if inherit:
+            self.inherit()
 
         if role == "master":
             self.init_master_config()
@@ -82,7 +84,12 @@ class Config(DefDict):
             # add token
             self._d['ip_header'] = os.environ.get('SASHIMI_IP_HEADER')
 
+    def save(self, path: str | Path = None):
 
+        if path is None:
+            path = self.path
+        with open(path, 'w') as fh:
+            yaml.dump(self._d, fh, default_flow_style=False)
 
     def __setitem__(self, key, item):
         self._d[key] = item
@@ -110,3 +117,4 @@ class Config(DefDict):
     
     def __repr__(self):
         return(f"Config({self.role}) tokens: {self['tokens']}")
+    
