@@ -1,9 +1,11 @@
-# Exact
-Exact is simple and very fast headless CMS with REST API for reactive JavaScript/JAMstack websites. See it as an alternative to Strapi or Algolia.
+# SashimiDB
+Imagine, you can query your MySQL database right from your website JavaScript! Secure and fast.
+
+SashimiDB is simple and very fast database with REST API for reactive JavaScript/JAMstack websites. SashimiDB can work as an Headless CMS. See it as an alternative to Strapi or Algolia.
 
 ## Features
 
-Exact allows anonymous read-only queries (with Cross-origin control only) from web page JavaScript. 
+SashimiDB allows anonymous read-only queries (with Cross-origin control only) from web page JavaScript. 
 
 Query format is simple and very flexible (as flexible as Python expression).
 
